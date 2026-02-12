@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.Mapper.ProductMapper">
+
+    <select id="selectHomeProductPage" resultType="com.example.Entity.Product">
+        SELECT
+            id,
+            name,
+            subtitle,
+            price,
+            original_price,
+            main_image,
+            sold_count,
+            unit,
+            is_recommended,
+            is_hot,
+            is_new
+        FROM product
+        WHERE status = 1
+        ORDER BY id , create_time DESC
+            LIMIT #{offset}, #{size}
+    </select>
+
+</mapper>
