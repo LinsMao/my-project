@@ -26,7 +26,7 @@ public class ProductController {
             List<ProductVO> list = productService.getHomeProductPage(page, size);
             return ApiResponse.success(list);
         } catch (Exception e) {
-            return ApiResponse.error(e+"获取商品列表失败");
+            return ApiResponse.error(e+"获取商品列表失败！！！");
         } 
     }
 }
