@@ -24,4 +24,16 @@
             LIMIT #{offset}, #{size}
     </select>
 
+    <select id="selectById" resultType="com.example.Entity.Product">
+        SELECT
+        id, name, subtitle, description,
+        price, original_price, main_image,
+        sold_count, stock, unit,
+        is_recommended, is_hot, is_new,
+        origin_place, brand, shelf_life,
+        delivery_type, min_purchase, max_purchase
+        FROM product
+        WHERE id = #{id} AND status = 1
+    </select>
+
 </mapper>

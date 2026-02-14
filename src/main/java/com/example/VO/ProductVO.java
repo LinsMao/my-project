@@ -8,15 +8,7 @@ import java.util.List;
 @Data
 public class ProductVO {
 
-//    private Long id;
-//    private String name;
-//    private String subtitle;
-//
-//    private BigDecimal price;
-//    private BigDecimal originalPrice;
-//    private Integer soldCount;
-//
-//    private String image;   // 这里只放 imageName，不拼完整 URL
+
 
     private Long id;
     private String name;

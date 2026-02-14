@@ -2,6 +2,7 @@ package com.example.Controller;
 
 import com.example.Common.ApiResponse;
 import com.example.Service.ProductService;
+import com.example.VO.ProductDetailVO;
 import com.example.VO.ProductVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -29,4 +30,24 @@ public class ProductController {
             return ApiResponse.error(e+"获取商品列表失败！！！");
         } 
     }
+
+    /**
+     * 获取商品详情
+     * @param id 商品ID
+     * @return 商品详情VO
+     */
+    @GetMapping("/{id}")
+    public ApiResponse<ProductDetailVO> getProductDetail(@PathVariable Long id){
+        try {
+            ProductDetailVO detail = productService.getProductDetail(id);
+            return ApiResponse.success(detail);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.badRequest(e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+
+
 }
