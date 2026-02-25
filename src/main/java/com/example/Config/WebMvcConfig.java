@@ -26,6 +26,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${app.image.product-path}")
     private String productImageWebPath;
 
+    // 用户头像
+    @Value("file:D:/my-images/users/")
+    private String avatarImageLocalPath;
+
+    @Value("${app.image.users-path}")
+    private String avatarImageWebPath;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 映射本地文件夹到web访问路径
@@ -34,6 +41,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler(productImageWebPath + "**")
                 .addResourceLocations(productImageLocalPath);
+
+        registry.addResourceHandler(avatarImageWebPath + "**")
+                .addResourceLocations(avatarImageLocalPath);
     }
 
 

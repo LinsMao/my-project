@@ -7,4 +7,44 @@
         select * from user
     </select>
 
+    <select id="findByOpenid" resultType="com.example.Entity.User">
+        SELECT * FROM users WHERE openid = #{openid}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO users(
+            openid,
+            session_key,
+            unionid,
+            status,
+            created_at,
+            updated_at,
+            last_login_at
+        ) VALUES (
+                     #{openid},
+                     #{sessionKey},
+                     #{unionid},
+                     1,
+                     NOW(),
+                     NOW(),
+                     NOW()
+                 )
+    </insert>
+
+    <update id="updateProfile">
+        UPDATE users
+        SET
+            nickname = #{nickname},
+            avatar = #{avatar},
+            gender = #{gender},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateLastLogin">
+        UPDATE users
+        SET last_login_at = NOW()
+        WHERE id = #{id}
+    </update>
+
 </mapper>
