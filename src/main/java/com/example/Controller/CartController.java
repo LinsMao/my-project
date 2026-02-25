@@ -2,11 +2,14 @@ package com.example.Controller;
 
 import com.example.Common.ApiResponse;
 import com.example.DTO.CartAddRequest;
+import com.example.VO.CartVO;
 import com.example.Service.CartService;
 import com.example.Utils.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/cart")
@@ -39,5 +42,23 @@ public class CartController {
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
         }
+    }
+
+    // 获取购物车列表
+    @GetMapping("/list")
+    public ApiResponse<List<CartVO>> getCartList(HttpServletRequest request) {
+        // 获取用户ID
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            return ApiResponse.unauthorized("未登录");
+        }
+        token = token.substring(7);
+        if (!JwtUtils.validateToken(token)) {
+            return ApiResponse.unauthorized("token无效");
+        }
+        Long userId = JwtUtils.getUserIdFromToken(token);
+
+        List<CartVO> list = cartService.getCartList(userId);
+        return ApiResponse.success(list);
     }
 }

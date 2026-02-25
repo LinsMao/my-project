@@ -1,8 +1,10 @@
 package com.example.Mapper;
 
 import com.example.Entity.Cart;
+import com.example.VO.CartVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import java.util.List;
 
 
 @Mapper
@@ -16,4 +18,7 @@ public interface CartMapper {
 
     // 更新
     int updateQuantity(Cart cart);
+
+    // 查询
+    List<CartVO> selectCartListWithProduct(@Param("userId") Long userId);
 }

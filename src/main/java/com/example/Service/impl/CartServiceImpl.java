@@ -6,9 +6,12 @@ import com.example.Entity.Product;
 import com.example.Mapper.CartMapper;
 import com.example.Mapper.ProductMapper;
 import com.example.Service.CartService;
+import com.example.VO.CartVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class CartServiceImpl implements CartService {
@@ -19,7 +22,7 @@ public class CartServiceImpl implements CartService {
     @Autowired
     private ProductMapper productMapper;
 
-    // TODO: 添加商品到购物车
+    //  添加商品到购物车
     @Override
     @Transactional
     public void addToCart(Long userId, CartAddRequest request) {
@@ -60,5 +63,11 @@ public class CartServiceImpl implements CartService {
             cartMapper.updateQuantity(existingCart);
 
         }
+    }
+
+    // 获取购物车列表
+    @Override
+    public List<CartVO> getCartList(Long userId) {
+        return cartMapper.selectCartListWithProduct(userId);
     }
 }
