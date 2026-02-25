@@ -10,6 +10,9 @@ import java.util.List;
 @Mapper
 public interface CartMapper {
 
+    // 根据ID查询购物车数据
+    Cart selectById(@Param("id") Long id);
+
     // 根据用户ID和商品ID查询购物车
     Cart findByUserIdAndProductId(@Param("userId") Long userId, @Param("productId") Long productId);
 
@@ -21,4 +24,7 @@ public interface CartMapper {
 
     // 查询
     List<CartVO> selectCartListWithProduct(@Param("userId") Long userId);
+
+    // 更新选中状态
+    int updateSelect(Cart cart);
 }

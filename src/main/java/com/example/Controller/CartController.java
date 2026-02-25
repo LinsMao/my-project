@@ -23,18 +23,10 @@ public class CartController {
      */
     @PostMapping("/add")
     public ApiResponse<?> addToCart(@RequestBody CartAddRequest request, HttpServletRequest httpRequest) {
-        String token = httpRequest.getHeader("Authorization");
-
-        if (token == null || !token.startsWith("Bearer ")) {
+        Long userId = getCurrentUserId(httpRequest);
+        if (userId == null) {
             return ApiResponse.unauthorized("未登录");
         }
-
-        token = token.substring(7);
-        if (!JwtUtils.validateToken(token)) {
-            return ApiResponse.unauthorized("token无效");
-        }
-        //获取用户ID
-        Long userId = JwtUtils.getUserIdFromToken(token);
 
         try {
             cartService.addToCart(userId, request);
@@ -48,17 +40,46 @@ public class CartController {
     @GetMapping("/list")
     public ApiResponse<List<CartVO>> getCartList(HttpServletRequest request) {
         // 获取用户ID
-        String token = request.getHeader("Authorization");
-        if (token == null || !token.startsWith("Bearer ")) {
+        Long userId = getCurrentUserId(request);
+        if (userId == null) {
             return ApiResponse.unauthorized("未登录");
         }
-        token = token.substring(7);
-        if (!JwtUtils.validateToken(token)) {
-            return ApiResponse.unauthorized("token无效");
-        }
-        Long userId = JwtUtils.getUserIdFromToken(token);
 
         List<CartVO> list = cartService.getCartList(userId);
         return ApiResponse.success(list);
     }
+
+
+    // 更新购物车选中状态
+    @PutMapping("/item/{id}/select")
+    public ApiResponse<?> updateSelect(@PathVariable Long id, @RequestParam Integer selected, HttpServletRequest request) {
+        // 获取当前用户ID
+        Long userId = getCurrentUserId(request);
+        if (userId == null) {
+            return ApiResponse.unauthorized("未登录");
+        }
+        try {
+            cartService.updateSelect(id, userId, selected);
+            return ApiResponse.success();
+        } catch (Exception e) {
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+
+    // 获取当前用户ID
+    private Long getCurrentUserId(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            return null;
+        }
+        token = token.substring(7);
+        if (!JwtUtils.validateToken(token)) {
+            return null;
+        }
+        return JwtUtils.getUserIdFromToken(token);
+    }
+
+
+
 }

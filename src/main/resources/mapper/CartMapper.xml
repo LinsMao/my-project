@@ -2,6 +2,21 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.Mapper.CartMapper">
 
+    <resultMap id="CartVOResultMap" type="com.example.VO.CartVO">
+        <id column="id" property="id"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_image" property="productImage"/>
+        <result column="price" property="price"/>
+        <result column="unit" property="unit"/>
+        <result column="quantity" property="quantity"/>
+        <result column="selected" property="selected"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <select id="selectById" resultType="com.example.Entity.Cart">
+        SELECT * FROM cart WHERE id = #{id}
+    </select>
 
     <select id="findByUserIdAndProductId" resultType="com.example.Entity.Cart">
         SELECT * FROM cart
@@ -19,9 +34,9 @@
         WHERE id = #{id}
     </update>
 
-    <select id="selectCartListWithProduct" resultType="com.example.VO.CartVO">
+    <select id="selectCartListWithProduct" resultMap="CartVOResultMap">
         SELECT
-            c.id AS cart_id,
+            c.id ,
             c.product_id,
             p.name AS product_name,
             p.main_image AS product_image,
@@ -35,5 +50,11 @@
         WHERE c.user_id = #{userId}
         ORDER BY c.create_time DESC
     </select>
+
+    <update id="updateSelect">
+        UPDATE cart
+        SET selected = #{selected}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
 
 </mapper>

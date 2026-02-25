@@ -70,4 +70,21 @@ public class CartServiceImpl implements CartService {
     public List<CartVO> getCartList(Long userId) {
         return cartMapper.selectCartListWithProduct(userId);
     }
+
+    // 更新购物车选中状态
+    @Override
+    @Transactional
+    public void updateSelect(Long cartId, Long userId, Integer selected) {
+        // 查询购物车项是否存在且属于该用户
+        Cart cart = cartMapper.selectById(cartId);
+        if (cart == null) {
+            throw new RuntimeException("购物车项不存在");
+        }
+        if (!cart.getUserId().equals(userId)) {
+            throw new RuntimeException("无权操作");
+        }
+        // 更新选中状态
+        cart.setSelected(selected==1);
+        cartMapper.updateSelect(cart);
+    }
 }
