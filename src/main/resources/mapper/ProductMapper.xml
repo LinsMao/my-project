@@ -31,7 +31,7 @@
         sold_count, stock, unit,
         is_recommended, is_hot, is_new,
         origin_place, brand, shelf_life,
-        delivery_type, min_purchase, max_purchase
+        delivery_type, min_purchase, max_purchase,status
         FROM product
         WHERE id = #{id} AND status = 1
     </select>

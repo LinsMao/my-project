@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.Mapper.CartMapper">
+
+
+    <select id="findByUserIdAndProductId" resultType="com.example.Entity.Cart">
+        SELECT * FROM cart
+        WHERE user_id = #{userId} AND product_id = #{productId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cart (user_id, product_id, quantity, selected, create_time, update_time)
+        VALUES (#{userId}, #{productId}, #{quantity}, #{selected}, NOW(), NOW())
+    </insert>
+
+    <update id="updateQuantity">
+        UPDATE cart
+        SET quantity = #{quantity}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>
