@@ -16,4 +16,16 @@ public interface CartService {
         // 更新选中状态
         void updateSelect(Long cartId, Long userId, Integer selected);
 
+        // 更新购物车商品数量
+        void updateQuantity(Long cartId, Long userId, Integer quantity);
+
+        // 全选/取消全选
+        void updateSelectAll(Long userId, Integer selected);
+
+        // 删除购物车项
+        void deleteCartItem(Long cartId, Long userId);
+
+        // 批量删除选中的购物车项
+        int deleteSelected(Long userId);
+
 }

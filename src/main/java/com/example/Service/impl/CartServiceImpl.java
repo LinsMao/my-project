@@ -87,4 +87,69 @@ public class CartServiceImpl implements CartService {
         cart.setSelected(selected==1);
         cartMapper.updateSelect(cart);
     }
+
+    // 更新购物车商品数量
+    @Override
+    @Transactional
+    public void updateQuantity(Long cartId, Long userId, Integer quantity) {
+        // 参数校验
+        if (quantity < 1) {
+            throw new RuntimeException("数量必须至少为1");
+        }
+
+        // 查询购物车项是否存在且属于该用户
+        Cart cart = cartMapper.selectById(cartId);
+        if (cart == null) {
+            throw new RuntimeException("购物车项不存在");
+        }
+        if (!cart.getUserId().equals(userId)) {
+            throw new RuntimeException("无权操作");
+        }
+
+        // 校验商品库存
+        Product product = productMapper.selectById(cart.getProductId());
+        if (product == null) {
+            throw new RuntimeException("商品不存在");
+        }
+        if (product.getStatus() != 1) {
+            throw new RuntimeException("商品已下架");
+        }
+        if (product.getStock() < quantity) {
+            throw new RuntimeException("库存不足，当前库存：" + product.getStock());
+        }
+
+        // 更新数量
+        cart.setQuantity(quantity);
+        cartMapper.updateQuantity(cart);
+    }
+
+    // 全选/取消全选
+    @Override
+    @Transactional
+    public void updateSelectAll(Long userId, Integer selected) {
+        cartMapper.updateSelectAll(userId, selected == 1);
+    }
+
+    // 删除购物车项
+    @Override
+    @Transactional
+    public void deleteCartItem(Long cartId, Long userId) {
+        // 查询购物车项是否存在且属于该用户
+        Cart cart = cartMapper.selectById(cartId);
+        if (cart == null) {
+            throw new RuntimeException("购物车项不存在");
+        }
+        if (!cart.getUserId().equals(userId)) {
+            throw new RuntimeException("无权操作");
+        }
+        // 删除购物车项
+        cartMapper.deleteById(cartId);
+    }
+
+    // 批量删除选中的购物车项
+    @Override
+    @Transactional
+    public int deleteSelected(Long userId) {
+        return cartMapper.deleteSelected(userId);
+    }
 }

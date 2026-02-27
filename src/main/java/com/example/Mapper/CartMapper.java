@@ -27,4 +27,13 @@ public interface CartMapper {
 
     // 更新选中状态
     int updateSelect(Cart cart);
+
+    // 批量更新用户的所有购物车项选中状态
+    int updateSelectAll(@Param("userId") Long userId, @Param("selected") Boolean selected);
+
+    // 删除购物车项
+    int deleteById(@Param("id") Long id);
+
+    // 批量删除选中的购物车项
+    int deleteSelected(@Param("userId") Long userId);
 }

@@ -57,4 +57,18 @@
         WHERE id = #{id}
     </update>
 
+    <update id="updateSelectAll">
+        UPDATE cart
+        SET selected = #{selected}, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM cart WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteSelected">
+        DELETE FROM cart WHERE user_id = #{userId} AND selected = 1
+    </delete>
+
 </mapper>
