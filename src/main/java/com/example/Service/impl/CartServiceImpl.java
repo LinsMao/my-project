@@ -71,6 +71,12 @@ public class CartServiceImpl implements CartService {
         return cartMapper.selectCartListWithProduct(userId);
     }
 
+    // 获取选中的购物车列表
+    @Override
+    public List<CartVO> getSelectedCartList(Long userId) {
+        return cartMapper.selectSelectedCartListWithProduct(userId);
+    }
+
     // 更新购物车选中状态
     @Override
     @Transactional

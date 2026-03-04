@@ -13,6 +13,9 @@ public interface CartService {
         // 获取购物车列表
         List<CartVO> getCartList(Long userId);
 
+        // 获取选中的购物车列表
+        List<CartVO> getSelectedCartList(Long userId);
+
         // 更新选中状态
         void updateSelect(Long cartId, Long userId, Integer selected);
 

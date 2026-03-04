@@ -36,4 +36,10 @@
         WHERE id = #{id} AND status = 1
     </select>
 
+    <update id="updateStock">
+        UPDATE product
+        SET stock = #{stock}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
 </mapper>

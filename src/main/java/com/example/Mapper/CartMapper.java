@@ -25,6 +25,9 @@ public interface CartMapper {
     // 查询
     List<CartVO> selectCartListWithProduct(@Param("userId") Long userId);
 
+    // 查询选中的购物车商品
+    List<CartVO> selectSelectedCartListWithProduct(@Param("userId") Long userId);
+
     // 更新选中状态
     int updateSelect(Cart cart);
 

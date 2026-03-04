@@ -16,4 +16,7 @@ public interface ProductMapper {
 
     // 根据ID查询商品详情
     Product selectById(@Param("id") Long id);
+
+    // 更新商品库存
+    int updateStock(Product product);
 }

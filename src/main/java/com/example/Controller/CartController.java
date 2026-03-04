@@ -49,6 +49,19 @@ public class CartController {
         return ApiResponse.success(list);
     }
 
+    // 获取选中的购物车列表
+    @GetMapping("/selected")
+    public ApiResponse<List<CartVO>> getSelectedCartList(HttpServletRequest request) {
+        // 获取用户ID
+        Long userId = getCurrentUserId(request);
+        if (userId == null) {
+            return ApiResponse.unauthorized("未登录");
+        }
+
+        List<CartVO> list = cartService.getSelectedCartList(userId);
+        return ApiResponse.success(list);
+    }
+
 
     // 更新购物车选中状态
     @PutMapping("/item/{id}/select")
