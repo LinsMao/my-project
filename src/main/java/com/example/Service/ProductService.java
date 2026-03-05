@@ -18,4 +18,9 @@ public interface ProductService {
      * 获取商品详情信息
      */
     ProductDetailVO getProductDetail(Long id);
+
+    /**
+     * 搜索商品
+     */
+    List<ProductVO> searchProducts(String keyword);
 }

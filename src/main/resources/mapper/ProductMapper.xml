@@ -42,4 +42,19 @@
         WHERE id = #{id}
     </update>
 
+    <select id="searchByKeyword" resultType="com.example.Entity.Product">
+        SELECT
+            id, name, subtitle, description,
+            price, original_price, main_image,
+            sold_count, stock, unit,
+            is_recommended, is_hot, is_new
+        FROM product
+        WHERE status = 1
+          AND (name LIKE CONCAT('%', #{keyword}, '%')
+           OR subtitle LIKE CONCAT('%', #{keyword}, '%')
+           OR description LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY sold_count DESC
+        LIMIT 50
+    </select>
+
 </mapper>

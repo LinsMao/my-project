@@ -105,4 +105,45 @@ public class ProductServiceImpl implements ProductService {
 
         return vo;
     }
+
+    @Override
+    public List<ProductVO> searchProducts(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 调用Mapper搜索
+        List<Product> products = productMapper.searchByKeyword(keyword.trim());
+
+        // 转换为VO
+        List<ProductVO> result = new ArrayList<>();
+        for (Product p : products) {
+            ProductVO vo = new ProductVO();
+            vo.setId(p.getId());
+            vo.setName(p.getName());
+            vo.setSubtitle(p.getSubtitle());
+            vo.setPrice(p.getPrice());
+            vo.setOriginalPrice(p.getOriginalPrice());
+            vo.setSoldCount(p.getSoldCount());
+            vo.setUnit(p.getUnit());
+            vo.setImage(p.getMainImage());
+
+            // 标签
+            List<String> tags = new ArrayList<>();
+            if (p.getIsRecommended() != null && p.getIsRecommended() == 1) {
+                tags.add("推荐");
+            }
+            if (p.getIsHot() != null && p.getIsHot() == 1) {
+                tags.add("热销");
+            }
+            if (p.getIsNew() != null && p.getIsNew() == 1) {
+                tags.add("新品");
+            }
+            vo.setTagList(tags);
+
+            result.add(vo);
+        }
+
+        return result;
+    }
 }

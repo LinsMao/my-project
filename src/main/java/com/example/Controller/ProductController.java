@@ -48,6 +48,22 @@ public class ProductController {
         }
     }
 
-
+    /**
+     * 搜索商品
+     * @param keyword 搜索关键词
+     * @return 商品列表
+     */
+    @GetMapping("/search")
+    public ApiResponse<List<ProductVO>> searchProducts(@RequestParam String keyword) {
+        try {
+            if (keyword == null || keyword.trim().isEmpty()) {
+                return ApiResponse.badRequest("搜索关键词不能为空");
+            }
+            List<ProductVO> products = productService.searchProducts(keyword);
+            return ApiResponse.success(products);
+        } catch (Exception e) {
+            return ApiResponse.error("搜索失败：" + e.getMessage());
+        }
+    }
 
 }
