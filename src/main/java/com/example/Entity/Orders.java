@@ -10,6 +10,8 @@ public class Orders {
     private Long id;                   // 订单ID
     private String orderNo;             // 订单号
     private Long userId;                // 用户ID
+    private Long merchantId;            // 商户ID
+    private String merchantName;        // 商户名称（快照）
     private BigDecimal totalAmount;      // 订单总金额
     private BigDecimal payAmount;        // 实付金额
     private BigDecimal freightAmount;    // 运费金额

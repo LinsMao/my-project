@@ -49,6 +49,19 @@ public class ProductController {
     }
 
     /**
+     * 根据分类ID获取商品列表（小程序端）
+     */
+    @GetMapping("/category/{categoryId}")
+    public ApiResponse<List<ProductVO>> getProductsByCategory(@PathVariable Long categoryId) {
+        try {
+            List<ProductVO> list = productService.getProductsByCategory(categoryId);
+            return ApiResponse.success(list);
+        } catch (Exception e) {
+            return ApiResponse.error("获取商品列表失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 搜索商品
      * @param keyword 搜索关键词
      * @return 商品列表

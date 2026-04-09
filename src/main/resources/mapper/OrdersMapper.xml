@@ -4,12 +4,12 @@
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO `orders` (
-            order_no, user_id, total_amount, pay_amount, freight_amount,
+            order_no, user_id, merchant_id, merchant_name, total_amount, pay_amount, freight_amount,
             pay_type, pay_status, order_status,
             receiver_name, receiver_phone, receiver_address,
             remark, create_time, update_time
         ) VALUES (
-            #{orderNo}, #{userId}, #{totalAmount}, #{payAmount}, #{freightAmount},
+            #{orderNo}, #{userId}, #{merchantId}, #{merchantName}, #{totalAmount}, #{payAmount}, #{freightAmount},
             #{payType}, #{payStatus}, #{orderStatus},
             #{receiverName}, #{receiverPhone}, #{receiverAddress},
             #{remark}, NOW(), NOW()

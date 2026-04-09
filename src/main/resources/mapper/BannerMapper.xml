@@ -2,9 +2,87 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.example.Mapper.BannerMapper">
-    <select id="selectBannerInfo" resultType="com.example.Entity.Banner">
-        SELECT * FROM banner WHERE status = 1 ORDER BY sort_order ASC
+
+    <!-- 查询所有轮播图列表（按排序） -->
+    <select id="selectAll" resultType="com.example.Entity.Banner">
+        SELECT
+            id, image_name, image_path, title, subtitle,
+            price, link_url, sort_order, status,
+            create_time, update_time
+        FROM banner
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <!-- 根据ID查询轮播图 -->
+    <select id="selectById" resultType="com.example.Entity.Banner">
+        SELECT
+            id, image_name, image_path, title, subtitle,
+            price, link_url, sort_order, status,
+            create_time, update_time
+        FROM banner
+        WHERE id = #{id}
+    </select>
+
+    <!-- 添加轮播图 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO banner (
+            image_name, image_path, title, subtitle,
+            price, link_url, sort_order, status,
+            create_time, update_time
+        ) VALUES (
+            #{imageName}, #{imagePath}, #{title}, #{subtitle},
+            #{price}, #{linkUrl}, #{sortOrder}, #{status},
+            NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新轮播图 -->
+    <update id="update">
+        UPDATE banner
+        SET image_name = #{imageName},
+            image_path = #{imagePath},
+            title = #{title},
+            subtitle = #{subtitle},
+            price = #{price},
+            link_url = #{linkUrl},
+            sort_order = #{sortOrder},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除轮播图 -->
+    <delete id="deleteById">
+        DELETE FROM banner WHERE id = #{id}
+    </delete>
+
+    <!-- 更新轮播图状态 -->
+    <update id="updateStatus">
+        UPDATE banner
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新轮播图排序 -->
+    <update id="updateSortOrder">
+        UPDATE banner
+        SET sort_order = #{sortOrder},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 查询启用的轮播图列表（小程序端使用） -->
+    <select id="selectActiveList" resultType="com.example.Entity.Banner">
+        SELECT
+            id, image_name, image_path, title, subtitle,
+            price, link_url, sort_order,
+            create_time, update_time
+        FROM banner
+        WHERE status = 1
+        ORDER BY sort_order ASC, create_time DESC
     </select>
 
 </mapper>

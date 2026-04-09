@@ -24,16 +24,50 @@
             LIMIT #{offset}, #{size}
     </select>
 
+    <select id="selectByCategoryId" resultType="com.example.Entity.Product">
+        SELECT
+            id,
+            name,
+            subtitle,
+            price,
+            original_price,
+            main_image,
+            sold_count,
+            unit,
+            is_recommended,
+            is_hot,
+            is_new
+        FROM product
+        WHERE status = 1 AND category_id = #{categoryId}
+        ORDER BY create_time DESC
+    </select>
+
     <select id="selectById" resultType="com.example.Entity.Product">
         SELECT
         id, name, subtitle, description,
         price, original_price, main_image,
-        sold_count, stock, unit,
+        category_id, merchant_id,
+        sold_count, stock, unit, weight,
         is_recommended, is_hot, is_new,
         origin_place, brand, shelf_life,
-        delivery_type, min_purchase, max_purchase,status
+        delivery_type, min_purchase, max_purchase, status,
+        create_time, update_time
         FROM product
         WHERE id = #{id} AND status = 1
+    </select>
+
+    <select id="selectByIdWithoutStatus" resultType="com.example.Entity.Product">
+        SELECT
+        id, name, subtitle, description,
+        price, original_price, main_image,
+        category_id, merchant_id,
+        sold_count, stock, unit, weight,
+        is_recommended, is_hot, is_new,
+        origin_place, brand, shelf_life,
+        delivery_type, min_purchase, max_purchase, status,
+        create_time, update_time
+        FROM product
+        WHERE id = #{id}
     </select>
 
     <update id="updateStock">
@@ -55,6 +89,167 @@
            OR description LIKE CONCAT('%', #{keyword}, '%'))
         ORDER BY sold_count DESC
         LIMIT 50
+    </select>
+
+    <select id="selectMerchantProducts" resultType="com.example.Entity.Product">
+        SELECT
+            id, name, main_image, category_id, merchant_id,
+            price, original_price, stock, sold_count,
+            status, is_recommended, create_time
+        FROM product
+        <where>
+            <if test="merchantId != null">
+                merchant_id = #{merchantId}
+            </if>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        <choose>
+            <when test="sortField != null and sortField == 'price'">
+                ORDER BY price ${sortOrder == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <when test="sortField != null and sortField == 'stock'">
+                ORDER BY stock ${sortOrder == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <when test="sortField != null and sortField == 'soldCount'">
+                ORDER BY sold_count ${sortOrder == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="countMerchantProducts" resultType="int">
+        SELECT COUNT(*)
+        FROM product
+        <where>
+            <if test="merchantId != null">
+                merchant_id = #{merchantId}
+            </if>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByIdAndMerchantId" resultType="com.example.Entity.Product">
+        SELECT *
+        FROM product
+        WHERE id = #{id} AND merchant_id = #{merchantId}
+    </select>
+
+    <update id="updateProduct">
+        UPDATE product
+        SET name = #{name},
+            subtitle = #{subtitle},
+            description = #{description},
+            price = #{price},
+            original_price = #{originalPrice},
+            main_image = #{mainImage},
+            category_id = #{categoryId},
+            stock = #{stock},
+            unit = #{unit},
+            weight = #{weight},
+            shelf_life = #{shelfLife},
+            origin_place = #{originPlace},
+            brand = #{brand},
+            delivery_type = #{deliveryType},
+            is_recommended = #{isRecommended},
+            is_hot = #{isHot},
+            is_new = #{isNew},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateProductStatus">
+        UPDATE product
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <insert id="insertProduct" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO product (
+            name, subtitle, description,
+            price, original_price, main_image,
+            category_id, merchant_id, stock,
+            unit, shelf_life, origin_place,
+            brand, delivery_type,
+            is_recommended, is_hot, is_new,
+            status, sold_count, view_count,
+            create_time, update_time
+        ) VALUES (
+            #{name}, #{subtitle}, #{description},
+            #{price}, #{originalPrice}, #{mainImage},
+            #{categoryId}, #{merchantId}, #{stock},
+            #{unit}, #{shelfLife}, #{originPlace},
+            #{brand}, #{deliveryType},
+            #{isRecommended}, #{isHot}, #{isNew},
+            #{status}, #{soldCount}, #{viewCount},
+            NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 查询待审核商品列表（支持筛选） -->
+    <select id="selectPendingProductsWithFilter" resultType="com.example.Entity.Product">
+        SELECT
+            id, name, subtitle, main_image, price, stock, category_id,
+            merchant_id, create_time, update_time
+        FROM product
+        <where>
+            status = 2
+            <if test="productId != null">
+                AND id = #{productId}
+            </if>
+            <if test="productName != null and productName != ''">
+                AND name LIKE CONCAT('%', #{productName}, '%')
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计待审核商品总数（支持筛选） -->
+    <select id="countPendingProductsWithFilter" resultType="int">
+        SELECT COUNT(*)
+        FROM product
+        <where>
+            status = 2
+            <if test="productId != null">
+                AND id = #{productId}
+            </if>
+            <if test="productName != null and productName != ''">
+                AND name LIKE CONCAT('%', #{productName}, '%')
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
     </select>
 
 </mapper>

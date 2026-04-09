@@ -1,5 +1,7 @@
 package com.example.Service.impl;
 
+import com.example.DTO.merchant.MerchantOrderListRequest;
+import com.example.Entity.Admin;
 import com.example.Entity.Orders;
 import com.example.Entity.OrderItem;
 import com.example.Entity.Product;
@@ -11,6 +13,8 @@ import com.example.Mapper.ProductMapper;
 import com.example.Mapper.UserAddressMapper;
 import com.example.Service.OrderService;
 import com.example.VO.CartVO;
+import com.example.VO.MerchantOrderItemVO;
+import com.example.VO.MerchantOrderVO;
 import com.example.VO.OrderVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,7 +24,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -39,10 +45,16 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private UserAddressMapper userAddressMapper;
+    
+    @Autowired
+    private com.example.Mapper.OrderMapper orderMapper;
+    
+    @Autowired
+    private com.example.Mapper.admin.AdminMapper adminMapper;
 
     @Override
     @Transactional
-    public String createOrder(Long userId, Long addressId, String remark) {
+    public List<String> createOrder(Long userId, Long addressId, String remark) {
         // 验证并获取收货地址
         UserAddress address = userAddressMapper.selectById(addressId);
         if (address == null) {
@@ -58,29 +70,71 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("请选择要结算的商品");
         }
 
-        // 验商品状态和库存
+        // 验证商品状态和库存
         for (CartVO cart : cartList) {
             Product product = productMapper.selectById(cart.getProductId());
             
-            // 商品是否存在
             if (product == null) {
                 throw new RuntimeException("商品【" + cart.getProductName() + "】不存在");
             }
             
-            // 商品是否已下架
             if (product.getStatus() != 1) {
                 throw new RuntimeException("商品【" + cart.getProductName() + "】已下架");
             }
             
-            // 库存是否充足
             if (product.getStock() < cart.getQuantity()) {
                 throw new RuntimeException("商品【" + cart.getProductName() + "】库存不足，当前库存：" + product.getStock());
             }
         }
 
+        // 按商户分组购物车商品
+        Map<Long, List<CartVO>> merchantCartMap = new HashMap<>();
+        Map<Long, String> merchantNameMap = new HashMap<>();
+        
+        for (CartVO cart : cartList) {
+            Product product = productMapper.selectById(cart.getProductId());
+            Long merchantId = product.getMerchantId();
+            
+            // 分组商品
+            merchantCartMap.computeIfAbsent(merchantId, k -> new ArrayList<>()).add(cart);
+            
+            // 查询真实的商户名称
+            if (!merchantNameMap.containsKey(merchantId)) {
+                Admin merchant = adminMapper.findById(merchantId);
+                if (merchant != null && merchant.getRole() == 1) {
+                    merchantNameMap.put(merchantId, merchant.getNickname());
+                } else {
+                    merchantNameMap.put(merchantId, "商户" + merchantId);
+                }
+            }
+        }
+
+        // 为每个商户创建独立订单
+        List<String> orderNos = new ArrayList<>();
+        for (Map.Entry<Long, List<CartVO>> entry : merchantCartMap.entrySet()) {
+            Long merchantId = entry.getKey();
+            List<CartVO> merchantCarts = entry.getValue();
+            String merchantName = merchantNameMap.get(merchantId);
+            
+            String orderNo = createSingleMerchantOrder(userId, addressId, remark, merchantId, merchantName, merchantCarts, address);
+            orderNos.add(orderNo);
+        }
+
+        // 删除购物车中已结算的商品
+        cartMapper.deleteSelected(userId);
+
+        return orderNos;
+    }
+    
+    /**
+     * 为单个商户创建订单
+     */
+    private String createSingleMerchantOrder(Long userId, Long addressId, String remark, 
+                                            Long merchantId, String merchantName,
+                                            List<CartVO> merchantCarts, UserAddress address) {
         // 计算订单总金额
         BigDecimal totalAmount = BigDecimal.ZERO;
-        for (CartVO cart : cartList) {
+        for (CartVO cart : merchantCarts) {
             BigDecimal itemTotal = cart.getPrice().multiply(new BigDecimal(cart.getQuantity()));
             totalAmount = totalAmount.add(itemTotal);
         }
@@ -90,14 +144,15 @@ public class OrderServiceImpl implements OrderService {
         String orderNo = generateOrderNo();
         order.setOrderNo(orderNo);
         order.setUserId(userId);
+        order.setMerchantId(merchantId);
+        order.setMerchantName(merchantName);
         order.setTotalAmount(totalAmount);
-        order.setPayAmount(totalAmount); // 优惠
-        order.setFreightAmount(BigDecimal.ZERO); // 运费为0
-        order.setPayType(1); // 1-微信支付
-        order.setPayStatus(0); // 0-待支付
-        order.setOrderStatus(0); // 0-待付款
+        order.setPayAmount(totalAmount);
+        order.setFreightAmount(BigDecimal.ZERO);
+        order.setPayType(1);
+        order.setPayStatus(0);
+        order.setOrderStatus(0);
         
-        //收货地址
         order.setReceiverName(address.getReceiverName());
         order.setReceiverPhone(address.getReceiverPhone());
         order.setReceiverAddress(address.getProvince() + address.getCity() + address.getDistrict() + address.getDetailAddress());
@@ -108,8 +163,7 @@ public class OrderServiceImpl implements OrderService {
 
         // 创建订单商品并扣减库存
         List<OrderItem> orderItems = new ArrayList<>();
-        for (CartVO cart : cartList) {
-            // 创建订单项
+        for (CartVO cart : merchantCarts) {
             OrderItem item = new OrderItem();
             item.setOrderId(order.getId());
             item.setProductId(cart.getProductId());
@@ -129,9 +183,6 @@ public class OrderServiceImpl implements OrderService {
         }
         orderItemMapper.batchInsert(orderItems);
 
-        // 删除购物车中已结算的商品
-        cartMapper.deleteSelected(userId);
-
         return orderNo;
     }
 
@@ -146,6 +197,8 @@ public class OrderServiceImpl implements OrderService {
             OrderVO vo = new OrderVO();
             vo.setId(order.getId());
             vo.setOrderNo(order.getOrderNo());
+            vo.setMerchantId(order.getMerchantId());
+            vo.setMerchantName(order.getMerchantName());
             vo.setOrderStatus(order.getOrderStatus());
             vo.setPayAmount(order.getPayAmount());
             vo.setCreateTime(order.getCreateTime());
@@ -187,5 +240,174 @@ public class OrderServiceImpl implements OrderService {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         int random = (int) (Math.random() * 10000);
         return timestamp + String.format("%04d", random);
+    }
+    
+    @Override
+    public Map<String, Object> getMerchantOrders(MerchantOrderListRequest request) {
+        if (request.getMerchantId() == null) {
+            throw new IllegalArgumentException("商家ID不能为空");
+        }
+        
+        if (request.getPage() < 1) request.setPage(1);
+        if (request.getSize() <= 0) request.setSize(10);
+        
+        int offset = (request.getPage() - 1) * request.getSize();
+        
+        // 查询订单列表
+        List<Orders> orders = orderMapper.selectMerchantOrders(
+                request.getMerchantId(),
+                request.getOrderStatus(),
+                request.getOrderNo(),
+                request.getPhone(),
+                request.getStartTime(),
+                request.getEndTime(),
+                offset,
+                request.getSize()
+        );
+        
+        // 查询总数
+        int total = orderMapper.countMerchantOrders(
+                request.getMerchantId(),
+                request.getOrderStatus(),
+                request.getOrderNo(),
+                request.getPhone(),
+                request.getStartTime(),
+                request.getEndTime()
+        );
+        
+        // 转换为VO
+        List<MerchantOrderVO> voList = new ArrayList<>();
+        for (Orders order : orders) {
+            MerchantOrderVO vo = new MerchantOrderVO();
+            vo.setId(order.getId());
+            vo.setOrderNo(order.getOrderNo());
+            vo.setUserId(order.getUserId());
+            vo.setMerchantId(order.getMerchantId());
+            vo.setMerchantName(order.getMerchantName());
+            vo.setReceiverName(order.getReceiverName());
+            vo.setReceiverPhone(order.getReceiverPhone());
+            vo.setReceiverAddress(order.getReceiverAddress());
+            vo.setTotalAmount(order.getTotalAmount());
+            vo.setPayAmount(order.getPayAmount());
+            vo.setOrderStatus(order.getOrderStatus());
+            vo.setDeliveryCompany(order.getDeliveryCompany());
+            vo.setDeliveryNo(order.getDeliveryNo());
+            vo.setCreateTime(order.getCreateTime());
+            vo.setPayTime(order.getPayTime());
+            vo.setDeliveryTime(order.getDeliveryTime());
+            vo.setRemark(order.getRemark());
+            
+            // 查询订单项（拆单后，所有订单项都属于该商户，无需过滤）
+            List<OrderItem> items = orderItemMapper.selectByOrderId(order.getId());
+            List<MerchantOrderItemVO> itemVOList = new ArrayList<>();
+            for (OrderItem item : items) {
+                MerchantOrderItemVO itemVO = new MerchantOrderItemVO();
+                itemVO.setId(item.getId());
+                itemVO.setProductId(item.getProductId());
+                itemVO.setProductName(item.getProductName());
+                itemVO.setProductImage(item.getProductImage());
+                itemVO.setUnit(item.getUnit());
+                itemVO.setPrice(item.getPrice());
+                itemVO.setQuantity(item.getQuantity());
+                itemVO.setTotalAmount(item.getTotalAmount());
+                itemVOList.add(itemVO);
+            }
+            vo.setItems(itemVOList);
+            voList.add(vo);
+        }
+        
+        // 返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", voList);
+        result.put("total", total);
+        result.put("page", request.getPage());
+        result.put("size", request.getSize());
+        
+        return result;
+    }
+    
+    @Override
+    public MerchantOrderVO getMerchantOrderDetail(String orderNo, Long merchantId) {
+        if (orderNo == null || merchantId == null) {
+            throw new IllegalArgumentException("订单号和商家ID不能为空");
+        }
+        
+        // 查询订单并验证权限
+        Orders order = orderMapper.selectByOrderNoAndMerchantId(orderNo, merchantId);
+        if (order == null) {
+            throw new RuntimeException("订单不存在或无权限访问");
+        }
+        
+        // 转换为VO
+        MerchantOrderVO vo = new MerchantOrderVO();
+        vo.setId(order.getId());
+        vo.setOrderNo(order.getOrderNo());
+        vo.setUserId(order.getUserId());
+        vo.setMerchantId(order.getMerchantId());
+        vo.setMerchantName(order.getMerchantName());
+        vo.setReceiverName(order.getReceiverName());
+        vo.setReceiverPhone(order.getReceiverPhone());
+        vo.setReceiverAddress(order.getReceiverAddress());
+        vo.setTotalAmount(order.getTotalAmount());
+        vo.setPayAmount(order.getPayAmount());
+        vo.setOrderStatus(order.getOrderStatus());
+        vo.setDeliveryCompany(order.getDeliveryCompany());
+        vo.setDeliveryNo(order.getDeliveryNo());
+        vo.setCreateTime(order.getCreateTime());
+        vo.setPayTime(order.getPayTime());
+        vo.setDeliveryTime(order.getDeliveryTime());
+        vo.setRemark(order.getRemark());
+        
+        // 查询订单项（拆单后，所有订单项都属于该商户）
+        List<OrderItem> items = orderItemMapper.selectByOrderId(order.getId());
+        List<MerchantOrderItemVO> itemVOList = new ArrayList<>();
+        for (OrderItem item : items) {
+            MerchantOrderItemVO itemVO = new MerchantOrderItemVO();
+            itemVO.setId(item.getId());
+            itemVO.setProductId(item.getProductId());
+            itemVO.setProductName(item.getProductName());
+            itemVO.setProductImage(item.getProductImage());
+            itemVO.setUnit(item.getUnit());
+            itemVO.setPrice(item.getPrice());
+            itemVO.setQuantity(item.getQuantity());
+            itemVO.setTotalAmount(item.getTotalAmount());
+            itemVOList.add(itemVO);
+        }
+        vo.setItems(itemVOList);
+        
+        return vo;
+    }
+    
+    @Override
+    @Transactional
+    public void deliverOrder(String orderNo, Long merchantId, String deliveryCompany, String deliveryNo) {
+        if (orderNo == null || merchantId == null) {
+            throw new IllegalArgumentException("订单号和商家ID不能为空");
+        }
+        
+        if (deliveryCompany == null || deliveryCompany.trim().isEmpty()) {
+            throw new IllegalArgumentException("请输入物流公司");
+        }
+        
+        if (deliveryNo == null || deliveryNo.trim().isEmpty()) {
+            throw new IllegalArgumentException("请输入物流单号");
+        }
+        
+        // 验证订单权限
+        Orders order = orderMapper.selectByOrderNoAndMerchantId(orderNo, merchantId);
+        if (order == null) {
+            throw new RuntimeException("订单不存在或无权限操作");
+        }
+        
+        // 验证订单状态
+        if (order.getOrderStatus() != 1) {
+            throw new RuntimeException("只有待发货订单可以发货");
+        }
+        
+        // 更新发货信息
+        int result = orderMapper.updateDeliveryInfo(orderNo, deliveryCompany, deliveryNo);
+        if (result == 0) {
+            throw new RuntimeException("发货失败");
+        }
     }
 }

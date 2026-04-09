@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.Mapper.ProductAuditMapper">
+
+    <!-- 插入审核记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO product_audit (
+            product_id, merchant_id, audit_status,
+            audit_reason, auditor_id, auditor_name,
+            audit_time, create_time
+        ) VALUES (
+            #{productId}, #{merchantId}, #{auditStatus},
+            #{auditReason}, #{auditorId}, #{auditorName},
+            #{auditTime}, NOW()
+        )
+    </insert>
+
+    <!-- 根据商品ID查询审核记录 -->
+    <select id="selectByProductId" resultType="com.example.VO.ProductAuditVO">
+        SELECT
+            pa.id,
+            pa.product_id,
+            p.name as product_name,
+            pa.merchant_id,
+            a.username as merchant_name,
+            pa.audit_status,
+            pa.audit_reason,
+            pa.auditor_id,
+            pa.auditor_name,
+            pa.audit_time
+        FROM product_audit pa
+        LEFT JOIN product p ON pa.product_id = p.id
+        LEFT JOIN admin a ON pa.merchant_id = a.id
+        WHERE pa.product_id = #{productId}
+        ORDER BY pa.audit_time DESC
+    </select>
+
+    <!-- 根据商家ID查询审核记录 -->
+    <select id="selectByMerchantId" resultType="com.example.VO.ProductAuditVO">
+        SELECT
+            pa.id,
+            pa.product_id AS productId,
+            p.name AS productName,
+            p.main_image AS productImage,
+            p.price AS productPrice,
+            p.stock AS productStock,
+            c.name AS categoryName,
+            pa.merchant_id AS merchantId,
+            a.nickname AS merchantName,
+            pa.audit_status AS auditStatus,
+            pa.audit_reason AS auditReason,
+            pa.auditor_id AS auditorId,
+            pa.auditor_name AS auditorName,
+            pa.audit_time AS auditTime,
+            p.create_time AS submitTime,
+            pa.create_time AS createTime
+        FROM product_audit pa
+        LEFT JOIN product p ON pa.product_id = p.id
+        LEFT JOIN admin a ON pa.merchant_id = a.id
+        LEFT JOIN category c ON p.category_id = c.id
+        WHERE pa.merchant_id = #{merchantId}
+        ORDER BY pa.audit_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计商家审核记录总数 -->
+    <select id="countByMerchantId" resultType="int">
+        SELECT COUNT(*)
+        FROM product_audit
+        WHERE merchant_id = #{merchantId}
+    </select>
+
+    <!-- 根据审核人ID查询审核记录 -->
+    <select id="selectByAuditorId" resultType="com.example.VO.ProductAuditVO">
+        SELECT
+            pa.id,
+            pa.product_id AS productId,
+            p.name AS productName,
+            p.main_image AS productImage,
+            p.price AS productPrice,
+            p.stock AS productStock,
+            c.name AS categoryName,
+            pa.merchant_id AS merchantId,
+            a.nickname AS merchantName,
+            pa.audit_status AS auditStatus,
+            pa.audit_reason AS auditReason,
+            pa.auditor_id AS auditorId,
+            pa.auditor_name AS auditorName,
+            pa.audit_time AS auditTime,
+            p.create_time AS submitTime,
+            pa.create_time AS createTime
+        FROM product_audit pa
+        LEFT JOIN product p ON pa.product_id = p.id
+        LEFT JOIN admin a ON pa.merchant_id = a.id
+        LEFT JOIN category c ON p.category_id = c.id
+        WHERE pa.auditor_id = #{auditorId}
+        ORDER BY pa.audit_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计审核人审核记录总数 -->
+    <select id="countByAuditorId" resultType="int">
+        SELECT COUNT(*)
+        FROM product_audit
+        WHERE auditor_id = #{auditorId}
+    </select>
+
+</mapper>

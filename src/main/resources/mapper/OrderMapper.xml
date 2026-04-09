@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.Mapper.OrderMapper">
+
+    <!-- 查询商家订单列表 -->
+    <select id="selectMerchantOrders" resultType="com.example.Entity.Orders">
+        SELECT o.*
+        FROM orders o
+        WHERE o.merchant_id = #{merchantId}
+        <if test="orderStatus != null">
+            AND o.order_status = #{orderStatus}
+        </if>
+        <if test="orderNo != null and orderNo != ''">
+            AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND o.receiver_phone LIKE CONCAT('%', #{phone}, '%')
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND o.create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND o.create_time &lt;= #{endTime}
+        </if>
+        ORDER BY o.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计商家订单总数 -->
+    <select id="countMerchantOrders" resultType="int">
+        SELECT COUNT(*)
+        FROM orders o
+        WHERE o.merchant_id = #{merchantId}
+        <if test="orderStatus != null">
+            AND o.order_status = #{orderStatus}
+        </if>
+        <if test="orderNo != null and orderNo != ''">
+            AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND o.receiver_phone LIKE CONCAT('%', #{phone}, '%')
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND o.create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND o.create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 根据订单号和商家ID查询订单 -->
+    <select id="selectByOrderNoAndMerchantId" resultType="com.example.Entity.Orders">
+        SELECT o.*
+        FROM orders o
+        WHERE o.order_no = #{orderNo}
+          AND o.merchant_id = #{merchantId}
+    </select>
+
+    <!-- 更新订单发货信息 -->
+    <update id="updateDeliveryInfo">
+        UPDATE orders
+        SET delivery_company = #{deliveryCompany},
+            delivery_no = #{deliveryNo},
+            delivery_time = NOW(),
+            order_status = 2,
+            update_time = NOW()
+        WHERE order_no = #{orderNo}
+    </update>
+
+</mapper>

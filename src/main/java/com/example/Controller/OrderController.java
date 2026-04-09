@@ -20,7 +20,7 @@ public class OrderController {
     private OrderService orderService;
 
     /**
-     * 创建订单
+     * 创建订单（支持拆单）
      */
     @PostMapping("/create")
     public ApiResponse<?> createOrder(@RequestBody CreateOrderRequest request, HttpServletRequest httpRequest) {
@@ -36,8 +36,18 @@ public class OrderController {
         }
 
         try {
-            String orderNo = orderService.createOrder(userId, request.getAddressId(), request.getRemark());
-            return ApiResponse.success("订单创建成功", orderNo);
+            List<String> orderNos = orderService.createOrder(userId, request.getAddressId(), request.getRemark());
+            
+            // 返回订单号列表和订单数量
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("orderNos", orderNos);
+            result.put("count", orderNos.size());
+            
+            String message = orderNos.size() > 1 
+                ? "订单创建成功，共创建" + orderNos.size() + "个订单" 
+                : "订单创建成功";
+            
+            return ApiResponse.success(message, result);
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
         }

@@ -11,6 +11,8 @@ import java.util.List;
 public class OrderVO {
     private Long id;                    // 订单ID
     private String orderNo;             // 订单号
+    private Long merchantId;            // 商户ID
+    private String merchantName;        // 商户名称
     private Integer orderStatus;        // 订单状态
     private BigDecimal payAmount;       // 实付金额
     private LocalDateTime createTime;   // 创建时间

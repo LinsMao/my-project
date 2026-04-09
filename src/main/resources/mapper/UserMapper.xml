@@ -47,4 +47,48 @@
         WHERE id = #{id}
     </update>
 
+    <!-- 根据ID查询用户 -->
+    <select id="findById" resultType="com.example.Entity.User">
+        SELECT * FROM users WHERE id = #{id}
+    </select>
+
+    <!-- 根据条件查询用户列表 -->
+    <select id="findByConditions" resultType="com.example.Entity.User">
+        SELECT * FROM users
+        <where>
+            <if test="nickname != null and nickname != ''">
+                AND nickname LIKE CONCAT('%', #{nickname}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone LIKE CONCAT('%', #{phone}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{pageNum}
+    </select>
+
+    <!-- 统计符合条件的总数 -->
+    <select id="countByConditions" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM users
+        <where>
+            <if test="nickname != null and nickname != ''">
+                AND nickname LIKE CONCAT('%', #{nickname}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone LIKE CONCAT('%', #{phone}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 更新用户状态 -->
+    <update id="updateStatus">
+        UPDATE users SET status = #{status}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
 </mapper>
