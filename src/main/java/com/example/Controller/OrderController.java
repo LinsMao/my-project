@@ -36,7 +36,7 @@ public class OrderController {
         }
 
         try {
-            List<String> orderNos = orderService.createOrder(userId, request.getAddressId(), request.getRemark());
+            List<String> orderNos = orderService.createOrder(userId, request.getAddressId(), request.getRemark(), request.getItems());
             
             // 返回订单号列表和订单数量
             java.util.Map<String, Object> result = new java.util.HashMap<>();
@@ -74,6 +74,26 @@ public class OrderController {
     }
 
     /**
+     * 获取订单详情
+     * @param orderNo 订单号
+     */
+    @GetMapping("/detail/{orderNo}")
+    public ApiResponse<OrderVO> getOrderDetail(@PathVariable String orderNo, HttpServletRequest httpRequest) {
+        // 获取当前用户ID
+        Long userId = getCurrentUserId(httpRequest);
+        if (userId == null) {
+            return ApiResponse.unauthorized("未登录");
+        }
+
+        try {
+            OrderVO orderDetail = orderService.getOrderDetail(orderNo, userId);
+            return ApiResponse.success(orderDetail);
+        } catch (Exception e) {
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
      * 取消订单
      */
     @PutMapping("/cancel/{orderNo}")
@@ -87,6 +107,44 @@ public class OrderController {
         try {
             orderService.cancelOrder(orderNo, userId);
             return ApiResponse.success("订单已取消");
+        } catch (Exception e) {
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 确认收货
+     */
+    @PutMapping("/confirm/{orderNo}")
+    public ApiResponse<?> confirmReceipt(@PathVariable String orderNo, HttpServletRequest httpRequest) {
+        // 获取当前用户ID
+        Long userId = getCurrentUserId(httpRequest);
+        if (userId == null) {
+            return ApiResponse.unauthorized("未登录");
+        }
+
+        try {
+            orderService.confirmReceipt(orderNo, userId);
+            return ApiResponse.success("确认收货成功");
+        } catch (Exception e) {
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取物流信息
+     */
+    @GetMapping("/logistics/{orderNo}")
+    public ApiResponse<?> getLogistics(@PathVariable String orderNo, HttpServletRequest httpRequest) {
+        // 获取当前用户ID
+        Long userId = getCurrentUserId(httpRequest);
+        if (userId == null) {
+            return ApiResponse.unauthorized("未登录");
+        }
+
+        try {
+            List<com.example.Entity.LogisticsTrace> traces = orderService.getLogisticsTrace(orderNo, userId);
+            return ApiResponse.success(traces);
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
         }

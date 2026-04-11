@@ -25,6 +25,9 @@ public interface ProductMapper {
     // 更新商品库存
     int updateStock(Product product);
 
+    // 更新商品销量
+    int updateSoldCount(@Param("id") Long id, @Param("soldCount") Integer soldCount);
+
     // 搜索商品（根据关键词）
     List<Product> searchByKeyword(@Param("keyword") String keyword);
 

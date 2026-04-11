@@ -26,4 +26,7 @@ public interface OrdersMapper {
 
     // 更新订单状态
     int updateOrderStatus(@Param("id") Long id, @Param("orderStatus") Integer orderStatus, @Param("cancelTime") java.time.LocalDateTime cancelTime);
+    
+    // 更新订单状态并记录收货时间
+    int updateOrderStatusWithReceiveTime(@Param("id") Long id, @Param("orderStatus") Integer orderStatus, @Param("receiveTime") java.time.LocalDateTime receiveTime);
 }

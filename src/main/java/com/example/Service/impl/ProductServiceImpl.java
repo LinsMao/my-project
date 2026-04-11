@@ -2,9 +2,11 @@ package com.example.Service.impl;
 
 import com.example.DTO.merchant.MerchantProductListRequest;
 import com.example.DTO.product.ProductUpdateRequest;
+import com.example.Entity.Admin;
 import com.example.Entity.Product;
 import com.example.Mapper.ProductAuditMapper;
 import com.example.Mapper.ProductMapper;
+import com.example.Mapper.admin.AdminMapper;
 import com.example.Service.ProductService;
 import com.example.VO.MerchantProductVO;
 import com.example.VO.ProductAuditVO;
@@ -27,6 +29,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductAuditMapper productAuditMapper;
+    
+    @Autowired
+    private AdminMapper adminMapper;
 
 
 
@@ -163,6 +168,14 @@ public class ProductServiceImpl implements ProductService {
         vo.setStatus(product.getStatus());
         vo.setCategoryId(product.getCategoryId());
         vo.setMerchantId(product.getMerchantId());
+        
+        // 查询商家名称
+        if (product.getMerchantId() != null) {
+            Admin merchant = adminMapper.findById(product.getMerchantId());
+            if (merchant != null && merchant.getRole() == 1) {
+                vo.setMerchantName(merchant.getNickname());
+            }
+        }
         
         // 生成标签列表
         List<String> tags = new ArrayList<>();

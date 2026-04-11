@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.Mapper.LogisticsTraceMapper">
+
+    <!-- 批量插入物流轨迹 -->
+    <insert id="batchInsert">
+        INSERT INTO logistics_trace (order_no, trace_status, trace_desc, location, trace_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.orderNo}, #{item.traceStatus}, #{item.traceDesc}, #{item.location}, #{item.traceTime})
+        </foreach>
+    </insert>
+
+    <!-- 根据订单号查询物流轨迹 -->
+    <select id="selectByOrderNo" resultType="com.example.Entity.LogisticsTrace">
+        SELECT * FROM logistics_trace
+        WHERE order_no = #{orderNo}
+        ORDER BY trace_time DESC
+    </select>
+
+</mapper>

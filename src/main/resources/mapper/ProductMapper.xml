@@ -76,6 +76,12 @@
         WHERE id = #{id}
     </update>
 
+    <update id="updateSoldCount">
+        UPDATE product
+        SET sold_count = #{soldCount}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
     <select id="searchByKeyword" resultType="com.example.Entity.Product">
         SELECT
             id, name, subtitle, description,

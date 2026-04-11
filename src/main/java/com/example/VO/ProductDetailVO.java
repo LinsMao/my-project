@@ -17,6 +17,7 @@ public class ProductDetailVO {
     private String image;  // 小程序使用，与mainImage相同
     private Integer categoryId;
     private Long merchantId;
+    private String merchantName;  // 商家名称
     private Integer stock;
     private Integer soldCount;
     private String unit;

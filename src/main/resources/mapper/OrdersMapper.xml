@@ -50,4 +50,12 @@
         WHERE id = #{id}
     </update>
 
+    <update id="updateOrderStatusWithReceiveTime">
+        UPDATE `orders`
+        SET order_status = #{orderStatus},
+            receive_time = #{receiveTime},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
 </mapper>

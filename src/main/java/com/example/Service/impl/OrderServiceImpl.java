@@ -6,12 +6,15 @@ import com.example.Entity.Orders;
 import com.example.Entity.OrderItem;
 import com.example.Entity.Product;
 import com.example.Entity.UserAddress;
+import com.example.Entity.LogisticsTrace;
 import com.example.Mapper.CartMapper;
 import com.example.Mapper.OrderItemMapper;
 import com.example.Mapper.OrdersMapper;
 import com.example.Mapper.ProductMapper;
 import com.example.Mapper.UserAddressMapper;
+import com.example.Mapper.LogisticsTraceMapper;
 import com.example.Service.OrderService;
+import com.example.Utils.AddressUtil;
 import com.example.VO.CartVO;
 import com.example.VO.MerchantOrderItemVO;
 import com.example.VO.MerchantOrderVO;
@@ -50,11 +53,14 @@ public class OrderServiceImpl implements OrderService {
     private com.example.Mapper.OrderMapper orderMapper;
     
     @Autowired
+    private LogisticsTraceMapper logisticsTraceMapper;
+    
+    @Autowired
     private com.example.Mapper.admin.AdminMapper adminMapper;
 
     @Override
     @Transactional
-    public List<String> createOrder(Long userId, Long addressId, String remark) {
+    public List<String> createOrder(Long userId, Long addressId, String remark, List<com.example.DTO.CreateOrderRequest.OrderItemRequest> items) {
         // 验证并获取收货地址
         UserAddress address = userAddressMapper.selectById(addressId);
         if (address == null) {
@@ -64,26 +70,56 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("无权使用该地址");
         }
 
-        // 获取选中的购物车商品
-        List<CartVO> cartList = cartMapper.selectSelectedCartListWithProduct(userId);
-        if (cartList == null || cartList.isEmpty()) {
-            throw new RuntimeException("请选择要结算的商品");
-        }
+        List<CartVO> cartList;
+        boolean isDirectPurchase = (items != null && !items.isEmpty());
+        
+        if (isDirectPurchase) {
+            // 立即购买模式：从传入的商品列表构建CartVO
+            cartList = new ArrayList<>();
+            for (com.example.DTO.CreateOrderRequest.OrderItemRequest item : items) {
+                Product product = productMapper.selectById(item.getProductId());
+                if (product == null) {
+                    throw new RuntimeException("商品不存在");
+                }
+                if (product.getStatus() != 1) {
+                    throw new RuntimeException("商品【" + product.getName() + "】已下架");
+                }
+                if (product.getStock() < item.getQuantity()) {
+                    throw new RuntimeException("商品【" + product.getName() + "】库存不足，当前库存：" + product.getStock());
+                }
+                
+                // 构建CartVO对象
+                CartVO cartVO = new CartVO();
+                cartVO.setProductId(product.getId());
+                cartVO.setProductName(product.getName());
+                cartVO.setProductImage(product.getMainImage());
+                cartVO.setUnit(product.getUnit());
+                cartVO.setPrice(product.getPrice());
+                cartVO.setQuantity(item.getQuantity());
+                cartList.add(cartVO);
+            }
+        } else {
+            // 购物车结算模式：从购物车获取选中的商品
+            cartList = cartMapper.selectSelectedCartListWithProduct(userId);
+            if (cartList == null || cartList.isEmpty()) {
+                throw new RuntimeException("请选择要结算的商品");
+            }
 
-        // 验证商品状态和库存
-        for (CartVO cart : cartList) {
-            Product product = productMapper.selectById(cart.getProductId());
-            
-            if (product == null) {
-                throw new RuntimeException("商品【" + cart.getProductName() + "】不存在");
-            }
-            
-            if (product.getStatus() != 1) {
-                throw new RuntimeException("商品【" + cart.getProductName() + "】已下架");
-            }
-            
-            if (product.getStock() < cart.getQuantity()) {
-                throw new RuntimeException("商品【" + cart.getProductName() + "】库存不足，当前库存：" + product.getStock());
+            // 验证商品状态和库存
+            for (CartVO cart : cartList) {
+                Product product = productMapper.selectById(cart.getProductId());
+                
+                if (product == null) {
+                    throw new RuntimeException("商品【" + cart.getProductName() + "】不存在");
+                }
+                
+                if (product.getStatus() != 1) {
+                    throw new RuntimeException("商品【" + cart.getProductName() + "】已下架");
+                }
+                
+                if (product.getStock() < cart.getQuantity()) {
+                    throw new RuntimeException("商品【" + cart.getProductName() + "】库存不足，当前库存：" + product.getStock());
+                }
             }
         }
 
@@ -120,8 +156,10 @@ public class OrderServiceImpl implements OrderService {
             orderNos.add(orderNo);
         }
 
-        // 删除购物车中已结算的商品
-        cartMapper.deleteSelected(userId);
+        // 只有购物车结算模式才删除购物车商品
+        if (!isDirectPurchase) {
+            cartMapper.deleteSelected(userId);
+        }
 
         return orderNos;
     }
@@ -214,6 +252,46 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public OrderVO getOrderDetail(String orderNo, Long userId) {
+        // 查询订单
+        Orders order = ordersMapper.selectByOrderNo(orderNo);
+        
+        if (order == null) {
+            throw new RuntimeException("订单不存在");
+        }
+        
+        if (!order.getUserId().equals(userId)) {
+            throw new RuntimeException("无权查看该订单");
+        }
+        
+        // 组装订单VO
+        OrderVO vo = new OrderVO();
+        vo.setId(order.getId());
+        vo.setOrderNo(order.getOrderNo());
+        vo.setMerchantId(order.getMerchantId());
+        vo.setMerchantName(order.getMerchantName());
+        vo.setOrderStatus(order.getOrderStatus());
+        vo.setPayAmount(order.getPayAmount());
+        vo.setTotalAmount(order.getTotalAmount());
+        vo.setFreightAmount(order.getFreightAmount());
+        vo.setReceiverName(order.getReceiverName());
+        vo.setReceiverPhone(order.getReceiverPhone());
+        vo.setReceiverAddress(order.getReceiverAddress());
+        vo.setRemark(order.getRemark());
+        vo.setDeliveryCompany(order.getDeliveryCompany());
+        vo.setDeliveryNo(order.getDeliveryNo());
+        vo.setCreateTime(order.getCreateTime());
+        vo.setPayTime(order.getPayTime());
+        vo.setDeliveryTime(order.getDeliveryTime());
+        
+        // 查询订单项
+        List<OrderItem> items = orderItemMapper.selectByOrderId(order.getId());
+        vo.setItems(items);
+        
+        return vo;
+    }
+
+    @Override
     @Transactional
     public void cancelOrder(String orderNo, Long userId) {
         // 查询订单
@@ -232,8 +310,68 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("只有待付款订单可以取消");
         }
 
+        // 恢复库存
+        List<OrderItem> orderItems = orderItemMapper.selectByOrderId(order.getId());
+        for (OrderItem item : orderItems) {
+            Product product = productMapper.selectById(item.getProductId());
+            if (product != null) {
+                // 恢复库存
+                int newStock = product.getStock() + item.getQuantity();
+                product.setStock(newStock);
+                productMapper.updateStock(product);
+            }
+        }
+
+        // 更新订单状态为已取消
         ordersMapper.updateOrderStatus(order.getId(), 4, LocalDateTime.now());
     }
+
+    @Override
+    @Transactional
+    public void confirmReceipt(String orderNo, Long userId) {
+        // 查询订单
+        Orders order = ordersMapper.selectByOrderNo(orderNo);
+
+        // 验证订单
+        if (order == null) {
+            throw new RuntimeException("订单不存在");
+        }
+
+        if (!order.getUserId().equals(userId)) {
+            throw new RuntimeException("无权操作该订单");
+        }
+
+        if (order.getOrderStatus() != 2) {
+            throw new RuntimeException("只有待收货订单可以确认收货");
+        }
+
+        // 增加商品销量
+        List<OrderItem> orderItems = orderItemMapper.selectByOrderId(order.getId());
+        for (OrderItem item : orderItems) {
+            Product product = productMapper.selectById(item.getProductId());
+            if (product != null) {
+                // 增加销量
+                int newSoldCount = (product.getSoldCount() != null ? product.getSoldCount() : 0) + item.getQuantity();
+                productMapper.updateSoldCount(product.getId(), newSoldCount);
+            }
+        }
+
+        // 更新订单状态为已完成，并记录收货时间
+        ordersMapper.updateOrderStatusWithReceiveTime(order.getId(), 3, LocalDateTime.now());
+    }
+    
+    @Override
+    public List<LogisticsTrace> getLogisticsTrace(String orderNo, Long userId) {
+        // 验证订单归属
+        Orders order = ordersMapper.selectByOrderNo(orderNo);
+        if (order == null || !order.getUserId().equals(userId)) {
+            throw new RuntimeException("订单不存在或无权限");
+        }
+        
+        // 查询物流轨迹，按时间倒序
+        return logisticsTraceMapper.selectByOrderNo(orderNo);
+    }
+
 
     // 生成订单号：时间戳 + 随机数
     private String generateOrderNo() {
@@ -409,5 +547,58 @@ public class OrderServiceImpl implements OrderService {
         if (result == 0) {
             throw new RuntimeException("发货失败");
         }
+        
+        // 生成物流轨迹
+        generateLogisticsTrace(order, deliveryCompany);
+    }
+    
+    /**
+     * 生成物流轨迹
+     */
+    private void generateLogisticsTrace(Orders order, String deliveryCompany) {
+        String receiverCity = AddressUtil.extractCity(order.getReceiverAddress());
+        String orderNo = order.getOrderNo();
+        LocalDateTime now = LocalDateTime.now();
+        
+        List<LogisticsTrace> traces = new ArrayList<>();
+        
+        if ("自配送".equals(deliveryCompany)) {
+            // 自配送物流
+            traces.add(createTrace(orderNo, "配送中", "商家正在配送", receiverCity, now));
+            traces.add(createTrace(orderNo, "配送中", "配送员已出发", receiverCity, now.plusHours(1)));
+            traces.add(createTrace(orderNo, "派送中", "配送员正在派送中，请保持电话畅通", receiverCity, now.plusHours(2)));
+        } else {
+            // 快递配送物流
+            String shipCity = "深圳市"; // 假设发货城市为深圳
+            
+            traces.add(createTrace(orderNo, "已发货", "商家已发货", shipCity, now));
+            traces.add(createTrace(orderNo, "已揽收", "快递已揽收", shipCity, now.plusHours(2)));
+            traces.add(createTrace(orderNo, "运输中", "快递已到达" + shipCity + "转运中心", shipCity, now.plusHours(4)));
+            
+            // 如果收货城市不同，添加到达收货城市的记录
+            if (!shipCity.equals(receiverCity)) {
+                traces.add(createTrace(orderNo, "运输中", "快递已到达" + receiverCity + "转运中心", receiverCity, now.plusHours(8)));
+            }
+            
+            traces.add(createTrace(orderNo, "派送中", "快递正在派送中，请保持电话畅通", receiverCity, now.plusHours(10)));
+        }
+        
+        // 批量插入物流轨迹
+        if (!traces.isEmpty()) {
+            logisticsTraceMapper.batchInsert(traces);
+        }
+    }
+    
+    /**
+     * 创建物流轨迹记录
+     */
+    private LogisticsTrace createTrace(String orderNo, String status, String desc, String location, LocalDateTime time) {
+        LogisticsTrace trace = new LogisticsTrace();
+        trace.setOrderNo(orderNo);
+        trace.setTraceStatus(status);
+        trace.setTraceDesc(desc);
+        trace.setLocation(location);
+        trace.setTraceTime(time);
+        return trace;
     }
 }
