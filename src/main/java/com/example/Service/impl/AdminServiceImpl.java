@@ -277,11 +277,11 @@ public class AdminServiceImpl implements AdminService {
         
         // 查询待审核商品列表（status=2）
         List<Product> products = productMapper.selectMerchantProducts(
-            null, null, null, 2, null, null, offset, size
+            null, null, null, 2, null, null, null, null, offset, size
         );
         
         // 统计总数
-        int total = productMapper.countMerchantProducts(null, null, null, 2);
+        int total = productMapper.countMerchantProducts(null, null, null, 2, null, null);
         
         Map<String, Object> result = new java.util.HashMap<>();
         result.put("list", products);
@@ -393,5 +393,368 @@ public class AdminServiceImpl implements AdminService {
         result.put("size", size);
         
         return result;
+    }
+
+    @Autowired
+    private com.example.Mapper.OrderMapper orderMapper;
+
+    @Override
+    public com.example.VO.AdminDashboardStatsVO getAdminDashboardStats() {
+        com.example.VO.AdminDashboardStatsVO stats = new com.example.VO.AdminDashboardStatsVO();
+        
+        // 今日订单数
+        Integer todayOrders = orderMapper.countPlatformTodayOrders();
+        stats.setTodayOrders(todayOrders != null ? todayOrders : 0);
+        
+        // 昨日订单数
+        Integer yesterdayOrders = orderMapper.countPlatformYesterdayOrders();
+        
+        // 计算增长率
+        if (yesterdayOrders != null && yesterdayOrders > 0) {
+            double growth = ((todayOrders - yesterdayOrders) * 100.0) / yesterdayOrders;
+            stats.setTodayOrdersGrowth(Math.round(growth * 10) / 10.0);
+        } else {
+            stats.setTodayOrdersGrowth(0.0);
+        }
+        
+        // 今日销售额
+        Double todaySales = orderMapper.sumPlatformTodaySales();
+        stats.setTodaySales(todaySales != null ? todaySales : 0.0);
+        
+        // 昨日销售额
+        Double yesterdaySales = orderMapper.sumPlatformYesterdaySales();
+        
+        // 计算销售额增长率
+        if (yesterdaySales != null && yesterdaySales > 0) {
+            double growth = ((todaySales - yesterdaySales) * 100.0) / yesterdaySales;
+            stats.setTodaySalesGrowth(Math.round(growth * 10) / 10.0);
+        } else {
+            stats.setTodaySalesGrowth(0.0);
+        }
+        
+        // 商家总数
+        Integer totalMerchants = adminMapper.countTotalMerchants();
+        stats.setTotalMerchants(totalMerchants != null ? totalMerchants : 0);
+        
+        // 用户总数
+        Integer totalUsers = adminMapper.countTotalUsers();
+        stats.setTotalUsers(totalUsers != null ? totalUsers : 0);
+        
+        // 商品总数
+        Integer totalProducts = productMapper.countPlatformProducts();
+        stats.setTotalProducts(totalProducts != null ? totalProducts : 0);
+        
+        // 在售商品数
+        Integer onSaleProducts = productMapper.countPlatformOnSaleProducts();
+        stats.setOnSaleProducts(onSaleProducts != null ? onSaleProducts : 0);
+        
+        return stats;
+    }
+    
+    @Override
+    public com.example.VO.AdminDashboardTodosVO getAdminDashboardTodos() {
+        com.example.VO.AdminDashboardTodosVO todos = new com.example.VO.AdminDashboardTodosVO();
+        
+        // 待审核商品
+        Integer pendingAudit = productMapper.countPendingProductsWithFilter(null, null, null, null);
+        todos.setPendingAuditProducts(pendingAudit != null ? pendingAudit : 0);
+        
+        // 待处理订单（待发货）
+        Integer pendingOrders = orderMapper.countPlatformPendingOrders();
+        todos.setPendingOrders(pendingOrders != null ? pendingOrders : 0);
+        
+        return todos;
+    }
+    
+    @Override
+    public java.util.List<com.example.VO.HotProductVO> getPlatformHotProducts(Integer limit) {
+        List<Product> products = productMapper.selectPlatformHotProducts(limit);
+        
+        java.util.List<com.example.VO.HotProductVO> result = new java.util.ArrayList<>();
+        for (Product p : products) {
+            com.example.VO.HotProductVO vo = new com.example.VO.HotProductVO();
+            vo.setId(p.getId());
+            vo.setName(p.getName());
+            vo.setMainImage(p.getMainImage());
+            vo.setSoldCount(p.getSoldCount());
+            vo.setPrice(p.getPrice());
+            result.add(vo);
+        }
+        
+        return result;
+    }
+    
+    @Override
+    public java.util.List<com.example.VO.RecentMerchantVO> getRecentMerchants(Integer limit) {
+        List<Admin> merchants = adminMapper.selectRecentMerchants(limit);
+        
+        java.util.List<com.example.VO.RecentMerchantVO> result = new java.util.ArrayList<>();
+        for (Admin merchant : merchants) {
+            com.example.VO.RecentMerchantVO vo = new com.example.VO.RecentMerchantVO();
+            vo.setId(merchant.getId());
+            vo.setUsername(merchant.getUsername());
+            vo.setNickname(merchant.getNickname());
+            vo.setPhone(merchant.getPhone());
+            vo.setCreateTime(merchant.getCreatedAt());
+            result.add(vo);
+        }
+        
+        return result;
+    }
+
+    // ==================== 管理员商品管理 ====================
+    
+    @Override
+    public Map<String, Object> getAdminProductList(com.example.DTO.admin.AdminProductListRequest request) {
+        int offset = (request.getPage() - 1) * request.getSize();
+        
+        // 查询商品列表
+        List<Product> products = productMapper.selectAdminProducts(
+            request.getProductName(),
+            request.getMerchantName(),
+            request.getCategoryId(),
+            request.getStatus(),
+            request.getStartTime(),
+            request.getEndTime(),
+            request.getSortField(),
+            request.getSortOrder(),
+            offset,
+            request.getSize()
+        );
+        
+        // 转换为VO
+        List<com.example.VO.AdminProductVO> productVOs = products.stream().map(product -> {
+            com.example.VO.AdminProductVO vo = new com.example.VO.AdminProductVO();
+            vo.setId(product.getId());
+            vo.setName(product.getName());
+            vo.setMainImage(product.getMainImage());
+            vo.setCategoryId(product.getCategoryId());
+            vo.setMerchantId(product.getMerchantId());
+            vo.setPrice(product.getPrice());
+            vo.setOriginalPrice(product.getOriginalPrice());
+            vo.setStock(product.getStock());
+            vo.setSoldCount(product.getSoldCount());
+            vo.setViewCount(product.getViewCount());
+            vo.setStatus(product.getStatus());
+            vo.setCreateTime(product.getCreateTime());
+            vo.setUpdateTime(product.getUpdateTime());
+            
+            // 获取分类名称
+            String categoryName = getCategoryName(product.getCategoryId());
+            vo.setCategoryName(categoryName);
+            
+            // 获取商家名称
+            Admin merchant = adminMapper.findById(product.getMerchantId());
+            if (merchant != null) {
+                vo.setMerchantName(merchant.getUsername());
+            }
+            
+            return vo;
+        }).collect(Collectors.toList());
+        
+        // 查询总数
+        int total = productMapper.countAdminProducts(
+            request.getProductName(),
+            request.getMerchantName(),
+            request.getCategoryId(),
+            request.getStatus(),
+            request.getStartTime(),
+            request.getEndTime()
+        );
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", productVOs);
+        result.put("total", total);
+        return result;
+    }
+    
+    @Override
+    public com.example.VO.AdminProductStatisticsVO getProductStatistics() {
+        com.example.VO.AdminProductStatisticsVO stats = new com.example.VO.AdminProductStatisticsVO();
+        
+        // 总商品数
+        Integer totalProducts = productMapper.countPlatformProducts();
+        stats.setTotalProducts(totalProducts != null ? totalProducts : 0);
+        
+        // 在售商品数
+        Integer onSaleProducts = productMapper.countProductsByStatus(1);
+        stats.setOnSaleProducts(onSaleProducts != null ? onSaleProducts : 0);
+        
+        // 下架商品数
+        Integer offSaleProducts = productMapper.countProductsByStatus(0);
+        stats.setOffSaleProducts(offSaleProducts != null ? offSaleProducts : 0);
+        
+        // 待审核商品数
+        Integer pendingProducts = productMapper.countProductsByStatus(2);
+        stats.setPendingProducts(pendingProducts != null ? pendingProducts : 0);
+        
+        return stats;
+    }
+    
+    @Override
+    @Transactional
+    public void forceOfflineProduct(Long productId, String reason) {
+        // 更新商品状态为下架
+        productMapper.updateProductStatus(productId, 0);
+        
+        // 记录审核记录（作为强制下架记录）
+        ProductAudit audit = new ProductAudit();
+        audit.setProductId(productId);
+        audit.setAuditStatus(0); // 0表示强制下架
+        audit.setAuditReason(reason);
+        audit.setAuditTime(LocalDateTime.now());
+        productAuditMapper.insert(audit);
+    }
+    
+    private String getCategoryName(Integer categoryId) {
+        if (categoryId == null) return "未分类";
+        Map<Integer, String> categoryMap = new HashMap<>();
+        categoryMap.put(1, "水果");
+        categoryMap.put(2, "蔬菜");
+        categoryMap.put(3, "肉类");
+        categoryMap.put(4, "海鲜");
+        categoryMap.put(5, "粮油");
+        categoryMap.put(6, "乳品");
+        return categoryMap.getOrDefault(categoryId, "未分类");
+    }
+
+    // ==================== 管理员订单管理 ====================
+    
+    @Autowired
+    private com.example.Mapper.OrderItemMapper orderItemMapper;
+    
+    @Override
+    public Map<String, Object> getAdminOrderList(com.example.DTO.admin.AdminOrderListRequest request) {
+        int offset = (request.getPage() - 1) * request.getSize();
+        
+        // 查询订单列表
+        List<com.example.Entity.Orders> orders = orderMapper.selectAdminOrders(
+            request.getOrderNo(),
+            request.getMerchantName(),
+            request.getUserPhone(),
+            request.getOrderStatus(),
+            request.getStartTime(),
+            request.getEndTime(),
+            offset,
+            request.getSize()
+        );
+        
+        // 转换为VO
+        List<com.example.VO.AdminOrderVO> orderVOs = orders.stream().map(order -> {
+            com.example.VO.AdminOrderVO vo = new com.example.VO.AdminOrderVO();
+            vo.setId(order.getId());
+            vo.setOrderNo(order.getOrderNo());
+            vo.setUserId(order.getUserId());
+            vo.setMerchantId(order.getMerchantId());
+            
+            // 获取商家名称
+            Admin merchant = adminMapper.findById(order.getMerchantId());
+            if (merchant != null) {
+                vo.setMerchantName(merchant.getUsername());
+            }
+            
+            vo.setTotalAmount(order.getTotalAmount());
+            vo.setPayAmount(order.getPayAmount());
+            vo.setOrderStatus(order.getOrderStatus());
+            vo.setPaymentMethod(order.getPayType());
+            vo.setReceiverName(order.getReceiverName());
+            vo.setReceiverPhone(order.getReceiverPhone());
+            vo.setReceiverAddress(order.getReceiverAddress());
+            vo.setRemark(order.getRemark());
+            vo.setDeliveryCompany(order.getDeliveryCompany());
+            vo.setDeliveryNo(order.getDeliveryNo());
+            vo.setCreateTime(order.getCreateTime());
+            vo.setPayTime(order.getPayTime());
+            vo.setDeliveryTime(order.getDeliveryTime());
+            vo.setFinishTime(order.getReceiveTime());
+            
+            // 查询订单项
+            List<com.example.Entity.OrderItem> orderItems = orderItemMapper.selectByOrderId(order.getId());
+            List<com.example.VO.AdminOrderItemVO> itemVOs = orderItems.stream().map(item -> {
+                com.example.VO.AdminOrderItemVO itemVO = new com.example.VO.AdminOrderItemVO();
+                itemVO.setId(item.getId());
+                itemVO.setProductId(item.getProductId());
+                itemVO.setProductName(item.getProductName());
+                itemVO.setProductImage(item.getProductImage());
+                itemVO.setPrice(item.getPrice());
+                itemVO.setQuantity(item.getQuantity());
+                itemVO.setUnit(item.getUnit());
+                itemVO.setTotalAmount(item.getTotalAmount());
+                return itemVO;
+            }).collect(Collectors.toList());
+            vo.setItems(itemVOs);
+            
+            return vo;
+        }).collect(Collectors.toList());
+        
+        // 查询总数
+        int total = orderMapper.countAdminOrders(
+            request.getOrderNo(),
+            request.getMerchantName(),
+            request.getUserPhone(),
+            request.getOrderStatus(),
+            request.getStartTime(),
+            request.getEndTime()
+        );
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", orderVOs);
+        result.put("total", total);
+        return result;
+    }
+    
+    @Override
+    public com.example.VO.AdminOrderVO getAdminOrderDetail(String orderNo) {
+        // 查询订单（不限制商家）
+        com.example.Entity.Orders order = orderMapper.selectByOrderNoForAdmin(orderNo);
+        if (order == null) {
+            throw new IllegalArgumentException("订单不存在");
+        }
+        
+        // 转换为VO
+        com.example.VO.AdminOrderVO vo = new com.example.VO.AdminOrderVO();
+        vo.setId(order.getId());
+        vo.setOrderNo(order.getOrderNo());
+        vo.setUserId(order.getUserId());
+        vo.setMerchantId(order.getMerchantId());
+        
+        // 获取商家名称
+        Admin merchant = adminMapper.findById(order.getMerchantId());
+        if (merchant != null) {
+            vo.setMerchantName(merchant.getUsername());
+        }
+        
+        vo.setTotalAmount(order.getTotalAmount());
+        vo.setPayAmount(order.getPayAmount());
+        vo.setOrderStatus(order.getOrderStatus());
+        vo.setPaymentMethod(order.getPayType());
+        vo.setReceiverName(order.getReceiverName());
+        vo.setReceiverPhone(order.getReceiverPhone());
+        vo.setReceiverAddress(order.getReceiverAddress());
+        vo.setRemark(order.getRemark());
+        vo.setDeliveryCompany(order.getDeliveryCompany());
+        vo.setDeliveryNo(order.getDeliveryNo());
+        vo.setCreateTime(order.getCreateTime());
+        vo.setPayTime(order.getPayTime());
+        vo.setDeliveryTime(order.getDeliveryTime());
+        vo.setFinishTime(order.getReceiveTime());
+        
+        // 查询订单项
+        List<com.example.Entity.OrderItem> orderItems = orderItemMapper.selectByOrderId(order.getId());
+        List<com.example.VO.AdminOrderItemVO> itemVOs = orderItems.stream().map(item -> {
+            com.example.VO.AdminOrderItemVO itemVO = new com.example.VO.AdminOrderItemVO();
+            itemVO.setId(item.getId());
+            itemVO.setProductId(item.getProductId());
+            itemVO.setProductName(item.getProductName());
+            itemVO.setProductImage(item.getProductImage());
+            itemVO.setPrice(item.getPrice());
+            itemVO.setQuantity(item.getQuantity());
+            itemVO.setUnit(item.getUnit());
+            itemVO.setTotalAmount(item.getTotalAmount());
+            return itemVO;
+        }).collect(Collectors.toList());
+        vo.setItems(itemVOs);
+        
+        return vo;
     }
 }

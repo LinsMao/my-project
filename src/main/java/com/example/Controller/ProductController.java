@@ -2,8 +2,10 @@ package com.example.Controller;
 
 import com.example.Common.ApiResponse;
 import com.example.Service.ProductService;
+import com.example.Utils.JwtUtils;
 import com.example.VO.ProductDetailVO;
 import com.example.VO.ProductVO;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,9 +39,12 @@ public class ProductController {
      * @return 商品详情VO
      */
     @GetMapping("/{id}")
-    public ApiResponse<ProductDetailVO> getProductDetail(@PathVariable Long id){
+    public ApiResponse<ProductDetailVO> getProductDetail(@PathVariable Long id, HttpServletRequest request){
         try {
-            ProductDetailVO detail = productService.getProductDetail(id);
+            // 获取用户ID（如果已登录）
+            Long userId = getCurrentUserId(request);
+            
+            ProductDetailVO detail = productService.getProductDetail(id, userId);
             return ApiResponse.success(detail);
         } catch (IllegalArgumentException e) {
             return ApiResponse.badRequest(e.getMessage());
@@ -77,6 +82,19 @@ public class ProductController {
         } catch (Exception e) {
             return ApiResponse.error("搜索失败：" + e.getMessage());
         }
+    }
+
+    // 获取当前用户ID（可能为null，表示未登录）
+    private Long getCurrentUserId(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token == null || !token.startsWith("Bearer ")) {
+            return null;
+        }
+        token = token.substring(7);
+        if (!JwtUtils.validateToken(token)) {
+            return null;
+        }
+        return JwtUtils.getUserIdFromToken(token);
     }
 
 }

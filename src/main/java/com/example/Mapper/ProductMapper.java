@@ -28,6 +28,9 @@ public interface ProductMapper {
     // 更新商品销量
     int updateSoldCount(@Param("id") Long id, @Param("soldCount") Integer soldCount);
 
+    // 增加商品浏览量
+    int incrementViewCount(@Param("id") Long id);
+
     // 搜索商品（根据关键词）
     List<Product> searchByKeyword(@Param("keyword") String keyword);
 
@@ -36,6 +39,8 @@ public interface ProductMapper {
                                          @Param("name") String name,
                                          @Param("categoryId") Integer categoryId,
                                          @Param("status") Integer status,
+                                         @Param("startTime") String startTime,
+                                         @Param("endTime") String endTime,
                                          @Param("sortField") String sortField,
                                          @Param("sortOrder") String sortOrder,
                                          @Param("offset") int offset,
@@ -45,7 +50,9 @@ public interface ProductMapper {
     int countMerchantProducts(@Param("merchantId") Long merchantId,
                               @Param("name") String name,
                               @Param("categoryId") Integer categoryId,
-                              @Param("status") Integer status);
+                              @Param("status") Integer status,
+                              @Param("startTime") String startTime,
+                              @Param("endTime") String endTime);
 
     // 根据ID和商家ID查询商品（用于权限验证）
     Product selectByIdAndMerchantId(@Param("id") Long id, @Param("merchantId") Long merchantId);
@@ -72,4 +79,37 @@ public interface ProductMapper {
                                         @Param("productName") String productName,
                                         @Param("startTime") String startTime,
                                         @Param("endTime") String endTime);
+    
+    // 查询商家热销商品
+    List<Product> selectHotProducts(@Param("merchantId") Long merchantId, @Param("limit") Integer limit);
+
+    // 统计库存不足的商品数量
+    Integer countLowStockProducts(@Param("merchantId") Long merchantId);
+    
+    // 平台统计方法
+    Integer countPlatformProducts();
+    Integer countPlatformOnSaleProducts();
+    List<Product> selectPlatformHotProducts(@Param("limit") Integer limit);
+    
+    // 管理员商品管理
+    List<Product> selectAdminProducts(@Param("productName") String productName,
+                                      @Param("merchantName") String merchantName,
+                                      @Param("categoryId") Integer categoryId,
+                                      @Param("status") Integer status,
+                                      @Param("startTime") String startTime,
+                                      @Param("endTime") String endTime,
+                                      @Param("sortField") String sortField,
+                                      @Param("sortOrder") String sortOrder,
+                                      @Param("offset") int offset,
+                                      @Param("size") int size);
+    
+    int countAdminProducts(@Param("productName") String productName,
+                          @Param("merchantName") String merchantName,
+                          @Param("categoryId") Integer categoryId,
+                          @Param("status") Integer status,
+                          @Param("startTime") String startTime,
+                          @Param("endTime") String endTime);
+    
+    // 商品统计
+    Integer countProductsByStatus(@Param("status") Integer status);
 }

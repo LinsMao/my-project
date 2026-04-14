@@ -70,4 +70,146 @@
         WHERE order_no = #{orderNo}
     </update>
 
+    <!-- Dashboard 统计查询 -->
+    <select id="countTodayOrders" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE merchant_id = #{merchantId}
+          AND DATE(create_time) = CURDATE()
+    </select>
+    
+    <select id="countYesterdayOrders" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE merchant_id = #{merchantId}
+          AND DATE(create_time) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+    </select>
+    
+    <select id="sumTodaySales" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(total_amount), 0)
+        FROM orders
+        WHERE merchant_id = #{merchantId}
+          AND DATE(create_time) = CURDATE()
+          AND order_status IN (2, 3, 4)
+    </select>
+    
+    <select id="sumYesterdaySales" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(total_amount), 0)
+        FROM orders
+        WHERE merchant_id = #{merchantId}
+          AND DATE(create_time) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+          AND order_status IN (2, 3, 4)
+    </select>
+    
+    <select id="countPendingOrders" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE merchant_id = #{merchantId}
+          AND order_status = 2
+    </select>
+    
+    <select id="selectRecentOrders" resultType="com.example.Entity.Orders">
+        SELECT o.id, o.order_no, u.nickname as user_name, o.total_amount, o.order_status, o.create_time
+        FROM orders o
+        LEFT JOIN users u ON o.user_id = u.id
+        WHERE o.merchant_id = #{merchantId}
+        ORDER BY o.create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 平台统计查询 -->
+    <select id="countPlatformTodayOrders" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE DATE(create_time) = CURDATE()
+    </select>
+    
+    <select id="countPlatformYesterdayOrders" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE DATE(create_time) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+    </select>
+    
+    <select id="sumPlatformTodaySales" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(total_amount), 0)
+        FROM orders
+        WHERE DATE(create_time) = CURDATE()
+          AND order_status IN (2, 3, 4)
+    </select>
+    
+    <select id="sumPlatformYesterdaySales" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(total_amount), 0)
+        FROM orders
+        WHERE DATE(create_time) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+          AND order_status IN (2, 3, 4)
+    </select>
+    
+    <select id="countPlatformPendingOrders" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE order_status = 1
+    </select>
+
+    <!-- 管理员订单管理 - 查询所有订单 -->
+    <select id="selectAdminOrders" resultType="com.example.Entity.Orders">
+        SELECT o.*
+        FROM orders o
+        LEFT JOIN admin a ON o.merchant_id = a.id
+        WHERE 1=1
+        <if test="orderNo != null and orderNo != ''">
+            AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
+        </if>
+        <if test="merchantName != null and merchantName != ''">
+            AND a.username LIKE CONCAT('%', #{merchantName}, '%')
+        </if>
+        <if test="orderStatus != null">
+            AND o.order_status = #{orderStatus}
+        </if>
+        <if test="userPhone != null and userPhone != ''">
+            AND o.receiver_phone LIKE CONCAT('%', #{userPhone}, '%')
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND o.create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND o.create_time &lt;= #{endTime}
+        </if>
+        ORDER BY o.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 管理员订单管理 - 统计订单总数 -->
+    <select id="countAdminOrders" resultType="int">
+        SELECT COUNT(*)
+        FROM orders o
+        LEFT JOIN admin a ON o.merchant_id = a.id
+        WHERE 1=1
+        <if test="orderNo != null and orderNo != ''">
+            AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
+        </if>
+        <if test="merchantName != null and merchantName != ''">
+            AND a.username LIKE CONCAT('%', #{merchantName}, '%')
+        </if>
+        <if test="orderStatus != null">
+            AND o.order_status = #{orderStatus}
+        </if>
+        <if test="userPhone != null and userPhone != ''">
+            AND o.receiver_phone LIKE CONCAT('%', #{userPhone}, '%')
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND o.create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND o.create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 管理员订单管理 - 根据订单号查询订单（不限制商家） -->
+    <select id="selectByOrderNoForAdmin" resultType="com.example.Entity.Orders">
+        SELECT o.*
+        FROM orders o
+        WHERE o.order_no = #{orderNo}
+    </select>
+
 </mapper>
+

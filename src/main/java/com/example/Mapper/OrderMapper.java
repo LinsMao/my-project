@@ -35,4 +35,39 @@ public interface OrderMapper {
     int updateDeliveryInfo(@Param("orderNo") String orderNo,
                           @Param("deliveryCompany") String deliveryCompany,
                           @Param("deliveryNo") String deliveryNo);
+    
+    // Dashboard 统计方法
+    Integer countTodayOrders(@Param("merchantId") Long merchantId);
+    Integer countYesterdayOrders(@Param("merchantId") Long merchantId);
+    Double sumTodaySales(@Param("merchantId") Long merchantId);
+    Double sumYesterdaySales(@Param("merchantId") Long merchantId);
+    Integer countPendingOrders(@Param("merchantId") Long merchantId);
+    List<Orders> selectRecentOrders(@Param("merchantId") Long merchantId, @Param("limit") Integer limit);
+    
+    // 平台统计方法
+    Integer countPlatformTodayOrders();
+    Integer countPlatformYesterdayOrders();
+    Double sumPlatformTodaySales();
+    Double sumPlatformYesterdaySales();
+    Integer countPlatformPendingOrders();
+    
+    // 管理员订单管理
+    List<Orders> selectAdminOrders(@Param("orderNo") String orderNo,
+                                   @Param("merchantName") String merchantName,
+                                   @Param("userPhone") String userPhone,
+                                   @Param("orderStatus") Integer orderStatus,
+                                   @Param("startTime") String startTime,
+                                   @Param("endTime") String endTime,
+                                   @Param("offset") int offset,
+                                   @Param("size") int size);
+    
+    int countAdminOrders(@Param("orderNo") String orderNo,
+                        @Param("merchantName") String merchantName,
+                        @Param("userPhone") String userPhone,
+                        @Param("orderStatus") Integer orderStatus,
+                        @Param("startTime") String startTime,
+                        @Param("endTime") String endTime);
+    
+    // 根据订单号查询订单（管理员用，不限制商家）
+    Orders selectByOrderNoForAdmin(@Param("orderNo") String orderNo);
 }

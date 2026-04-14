@@ -40,5 +40,9 @@ public interface AdminMapper {
 
     // 查询商家的商品数量
     Integer countProductsByMerchantId(@Param("merchantId") Long merchantId);
-
+    
+    // Dashboard 统计方法
+    Integer countTotalMerchants();
+    Integer countTotalUsers();
+    List<Admin> selectRecentMerchants(@Param("limit") Integer limit);
 }

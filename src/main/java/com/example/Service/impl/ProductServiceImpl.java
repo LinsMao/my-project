@@ -8,18 +8,22 @@ import com.example.Mapper.ProductAuditMapper;
 import com.example.Mapper.ProductMapper;
 import com.example.Mapper.admin.AdminMapper;
 import com.example.Service.ProductService;
+import com.example.VO.HotProductVO;
 import com.example.VO.MerchantProductVO;
 import com.example.VO.ProductAuditVO;
 import com.example.VO.ProductDetailVO;
 import com.example.VO.ProductVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -32,6 +36,9 @@ public class ProductServiceImpl implements ProductService {
     
     @Autowired
     private AdminMapper adminMapper;
+    
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
 
 
@@ -125,10 +132,15 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductDetailVO getProductDetail(Long id) {
+    public ProductDetailVO getProductDetail(Long id, Long userId) {
 
         if(id==null||id==0){
             throw new IllegalArgumentException("商品ID不合法");
+        }
+
+        // 增加浏览量（带去重）
+        if (userId != null) {
+            incrementViewCountWithDedup(id, userId);
         }
 
         Product product = productMapper.selectById(id);
@@ -251,6 +263,8 @@ public class ProductServiceImpl implements ProductService {
                 request.getName(),
                 request.getCategoryId(),
                 request.getStatus(),
+                request.getStartTime(),
+                request.getEndTime(),
                 request.getSortField(),
                 request.getSortOrder(),
                 offset,
@@ -262,7 +276,9 @@ public class ProductServiceImpl implements ProductService {
                 request.getMerchantId(),
                 request.getName(),
                 request.getCategoryId(),
-                request.getStatus()
+                request.getStatus(),
+                request.getStartTime(),
+                request.getEndTime()
         );
 
         // 分类映射
@@ -285,6 +301,7 @@ public class ProductServiceImpl implements ProductService {
             vo.setOriginalPrice(p.getOriginalPrice());
             vo.setStock(p.getStock());
             vo.setSoldCount(p.getSoldCount());
+            vo.setViewCount(p.getViewCount());
             vo.setStatus(p.getStatus());
             vo.setIsRecommended(p.getIsRecommended());
             vo.setCreateTime(p.getCreateTime());
@@ -454,6 +471,52 @@ public class ProductServiceImpl implements ProductService {
         result.put("total", total);
         result.put("page", page);
         result.put("size", size);
+        
+        return result;
+    }
+
+    /**
+     * 增加商品浏览量
+     */
+    private void incrementViewCountWithDedup(Long productId, Long userId) {
+        try {
+            String today = LocalDate.now().toString(); // 例如：2026-04-11
+            String redisKey = "product:view:" + productId + ":" + today;
+            
+            // 检查用户今天是否已经浏览过
+            Boolean isViewed = redisTemplate.opsForSet().isMember(redisKey, userId.toString());
+            
+            if (Boolean.FALSE.equals(isViewed)) {
+                // 添加到 Set
+                redisTemplate.opsForSet().add(redisKey, userId.toString());
+                
+                // 设置过期时间（48小时后自动删除，留一些余量）
+                redisTemplate.expire(redisKey, 48, TimeUnit.HOURS);
+                
+                // 浏览量加一
+                productMapper.incrementViewCount(productId);
+            }
+        } catch (Exception e) {
+            // Redis 异常不影响主流程，只记录日志
+            System.err.println("Redis浏览量统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<HotProductVO> getHotProducts(Long merchantId, Integer limit) {
+        // 查询商家的热销商品（按销量排序）
+        List<Product> products = productMapper.selectHotProducts(merchantId, limit);
+        
+        List<HotProductVO> result = new ArrayList<>();
+        for (Product p : products) {
+            HotProductVO vo = new HotProductVO();
+            vo.setId(p.getId());
+            vo.setName(p.getName());
+            vo.setMainImage(p.getMainImage());
+            vo.setSoldCount(p.getSoldCount());
+            vo.setPrice(p.getPrice());
+            result.add(vo);
+        }
         
         return result;
     }

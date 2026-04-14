@@ -212,4 +212,118 @@ public class AdminController {
             return ApiResponse.error("获取审核记录失败：" + e.getMessage());
         }
     }
+
+
+    @GetMapping("/dashboard/stats")
+    public ApiResponse<com.example.VO.AdminDashboardStatsVO> getDashboardStats() {
+        try {
+            com.example.VO.AdminDashboardStatsVO stats = adminService.getAdminDashboardStats();
+            return ApiResponse.success(stats);
+        } catch (Exception e) {
+            return ApiResponse.error("获取统计数据失败：" + e.getMessage());
+        }
+    }
+
+    @GetMapping("/dashboard/todos")
+    public ApiResponse<com.example.VO.AdminDashboardTodosVO> getDashboardTodos() {
+        try {
+            com.example.VO.AdminDashboardTodosVO todos = adminService.getAdminDashboardTodos();
+            return ApiResponse.success(todos);
+        } catch (Exception e) {
+            return ApiResponse.error("获取待办事项失败：" + e.getMessage());
+        }
+    }
+
+    @GetMapping("/dashboard/hot-products")
+    public ApiResponse<java.util.List<com.example.VO.HotProductVO>> getHotProducts(@RequestParam(defaultValue = "10") Integer limit) {
+        try {
+            java.util.List<com.example.VO.HotProductVO> products = adminService.getPlatformHotProducts(limit);
+            return ApiResponse.success(products);
+        } catch (Exception e) {
+            return ApiResponse.error("获取热销商品失败：" + e.getMessage());
+        }
+    }
+
+    @GetMapping("/dashboard/recent-merchants")
+    public ApiResponse<java.util.List<com.example.VO.RecentMerchantVO>> getRecentMerchants(@RequestParam(defaultValue = "5") Integer limit) {
+        try {
+            java.util.List<com.example.VO.RecentMerchantVO> merchants = adminService.getRecentMerchants(limit);
+            return ApiResponse.success(merchants);
+        } catch (Exception e) {
+            return ApiResponse.error("获取最近商家失败：" + e.getMessage());
+        }
+    }
+
+    // ==================== 管理员商品管理 ====================
+    
+    /**
+     * 获取商品列表（管理员）
+     */
+    @PostMapping("/products/list")
+    public ApiResponse<Map<String, Object>> getAdminProductList(@RequestBody com.example.DTO.admin.AdminProductListRequest request) {
+        try {
+            Map<String, Object> result = adminService.getAdminProductList(request);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            return ApiResponse.error("获取商品列表失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取商品统计数据
+     */
+    @GetMapping("/products/statistics")
+    public ApiResponse<com.example.VO.AdminProductStatisticsVO> getProductStatistics() {
+        try {
+            com.example.VO.AdminProductStatisticsVO stats = adminService.getProductStatistics();
+            return ApiResponse.success(stats);
+        } catch (Exception e) {
+            return ApiResponse.error("获取统计数据失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 强制下架商品（违规商品处理）
+     */
+    @PutMapping("/products/{productId}/force-offline")
+    public ApiResponse<String> forceOfflineProduct(
+            @PathVariable Long productId,
+            @RequestParam String reason) {
+        try {
+            adminService.forceOfflineProduct(productId, reason);
+            return ApiResponse.success("商品已强制下架");
+        } catch (Exception e) {
+            return ApiResponse.error("操作失败：" + e.getMessage());
+        }
+    }
+
+    // ==================== 管理员订单管理 ====================
+    
+    /**
+     * 获取订单列表（管理员）
+     */
+    @PostMapping("/orders/list")
+    public ApiResponse<Map<String, Object>> getAdminOrderList(@RequestBody com.example.DTO.admin.AdminOrderListRequest request) {
+        try {
+            Map<String, Object> result = adminService.getAdminOrderList(request);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            return ApiResponse.error("获取订单列表失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取订单详情（管理员）
+     */
+    @GetMapping("/orders/{orderNo}")
+    public ApiResponse<com.example.VO.AdminOrderVO> getAdminOrderDetail(@PathVariable String orderNo) {
+        try {
+            com.example.VO.AdminOrderVO order = adminService.getAdminOrderDetail(orderNo);
+            return ApiResponse.success(order);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.badRequest(e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error("获取订单详情失败：" + e.getMessage());
+        }
+    }
 }

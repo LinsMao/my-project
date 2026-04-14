@@ -2,6 +2,7 @@ package com.example.Service;
 
 import com.example.DTO.merchant.MerchantProductListRequest;
 import com.example.DTO.product.ProductUpdateRequest;
+import com.example.VO.HotProductVO;
 import com.example.VO.MerchantProductVO;
 import com.example.VO.ProductDetailVO;
 import com.example.VO.ProductVO;
@@ -24,7 +25,7 @@ public interface ProductService {
     /**
      * 获取商品详情信息
      */
-    ProductDetailVO getProductDetail(Long id);
+    ProductDetailVO getProductDetail(Long id, Long userId);
 
     /**
      * 搜索商品
@@ -64,4 +65,9 @@ public interface ProductService {
      * @return 审核记录列表和分页信息
      */
     Map<String, Object> getAdminAuditRecords(Long auditorId, Integer page, Integer size);
+    
+    /**
+     * 获取热销商品TOP N
+     */
+    List<HotProductVO> getHotProducts(Long merchantId, Integer limit);
 }

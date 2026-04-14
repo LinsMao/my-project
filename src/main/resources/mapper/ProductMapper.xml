@@ -82,6 +82,12 @@
         WHERE id = #{id}
     </update>
 
+    <update id="incrementViewCount">
+        UPDATE product
+        SET view_count = view_count + 1, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
     <select id="searchByKeyword" resultType="com.example.Entity.Product">
         SELECT
             id, name, subtitle, description,
@@ -100,7 +106,7 @@
     <select id="selectMerchantProducts" resultType="com.example.Entity.Product">
         SELECT
             id, name, main_image, category_id, merchant_id,
-            price, original_price, stock, sold_count,
+            price, original_price, stock, sold_count, view_count,
             status, is_recommended, create_time
         FROM product
         <where>
@@ -126,6 +132,9 @@
             </when>
             <when test="sortField != null and sortField == 'soldCount'">
                 ORDER BY sold_count ${sortOrder == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <when test="sortField != null and sortField == 'viewCount'">
+                ORDER BY view_count ${sortOrder == 'asc' ? 'ASC' : 'DESC'}
             </when>
             <otherwise>
                 ORDER BY create_time DESC
@@ -254,6 +263,129 @@
             </if>
             <if test="endTime != null and endTime != ''">
                 AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询商家热销商品 -->
+    <select id="selectHotProducts" resultType="com.example.Entity.Product">
+        SELECT id, name, main_image, sold_count, price
+        FROM product
+        WHERE merchant_id = #{merchantId} AND status = 1
+        ORDER BY sold_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计库存不足的商品数量 -->
+    <select id="countLowStockProducts" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM product
+        WHERE merchant_id = #{merchantId}
+          AND stock &lt; 10
+          AND status = 1
+    </select>
+
+    <!-- 平台统计查询 -->
+    <select id="countPlatformProducts" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM product
+    </select>
+    
+    <select id="countPlatformOnSaleProducts" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM product
+        WHERE status = 1
+    </select>
+    
+    <select id="selectPlatformHotProducts" resultType="com.example.Entity.Product">
+        SELECT id, name, main_image, sold_count, price
+        FROM product
+        WHERE status = 1
+        ORDER BY sold_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 管理员商品管理查询 -->
+    <select id="selectAdminProducts" resultType="com.example.Entity.Product">
+        SELECT
+            p.id, p.name, p.main_image, p.category_id, p.merchant_id,
+            p.price, p.original_price, p.stock, p.sold_count, p.view_count,
+            p.status, p.create_time, p.update_time
+        FROM product p
+        LEFT JOIN admin a ON p.merchant_id = a.id
+        <where>
+            <if test="productName != null and productName != ''">
+                AND p.name LIKE CONCAT('%', #{productName}, '%')
+            </if>
+            <if test="merchantName != null and merchantName != ''">
+                AND a.username LIKE CONCAT('%', #{merchantName}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND p.category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND p.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND p.create_time &lt;= #{endTime}
+            </if>
+        </where>
+        <choose>
+            <when test="sortField != null and sortField == 'price'">
+                ORDER BY p.price ${sortOrder == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <when test="sortField != null and sortField == 'stock'">
+                ORDER BY p.stock ${sortOrder == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <when test="sortField != null and sortField == 'soldCount'">
+                ORDER BY p.sold_count ${sortOrder == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <when test="sortField != null and sortField == 'viewCount'">
+                ORDER BY p.view_count ${sortOrder == 'asc' ? 'ASC' : 'DESC'}
+            </when>
+            <otherwise>
+                ORDER BY p.create_time DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="countAdminProducts" resultType="int">
+        SELECT COUNT(*)
+        FROM product p
+        LEFT JOIN admin a ON p.merchant_id = a.id
+        <where>
+            <if test="productName != null and productName != ''">
+                AND p.name LIKE CONCAT('%', #{productName}, '%')
+            </if>
+            <if test="merchantName != null and merchantName != ''">
+                AND a.username LIKE CONCAT('%', #{merchantName}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND p.category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND p.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND p.create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </select>
+
+    <!-- 按状态统计商品数量 -->
+    <select id="countProductsByStatus" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM product
+        <where>
+            <if test="status != null">
+                status = #{status}
             </if>
         </where>
     </select>

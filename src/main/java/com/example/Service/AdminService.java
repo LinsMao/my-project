@@ -60,4 +60,19 @@ public interface AdminService {
      * @return 审核记录列表和分页信息
      */
     Map<String, Object> getAdminAuditRecords(Long auditorId, Integer page, Integer size);
+
+    // Dashboard 相关方法
+    com.example.VO.AdminDashboardStatsVO getAdminDashboardStats();
+    com.example.VO.AdminDashboardTodosVO getAdminDashboardTodos();
+    java.util.List<com.example.VO.HotProductVO> getPlatformHotProducts(Integer limit);
+    java.util.List<com.example.VO.RecentMerchantVO> getRecentMerchants(Integer limit);
+    
+    // 管理员商品管理
+    Map<String, Object> getAdminProductList(com.example.DTO.admin.AdminProductListRequest request);
+    com.example.VO.AdminProductStatisticsVO getProductStatistics();
+    void forceOfflineProduct(Long productId, String reason);
+    
+    // 管理员订单管理
+    Map<String, Object> getAdminOrderList(com.example.DTO.admin.AdminOrderListRequest request);
+    com.example.VO.AdminOrderVO getAdminOrderDetail(String orderNo);
 }

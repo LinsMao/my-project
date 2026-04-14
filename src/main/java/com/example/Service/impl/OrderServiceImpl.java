@@ -16,9 +16,12 @@ import com.example.Mapper.LogisticsTraceMapper;
 import com.example.Service.OrderService;
 import com.example.Utils.AddressUtil;
 import com.example.VO.CartVO;
+import com.example.VO.DashboardStatsVO;
+import com.example.VO.DashboardTodosVO;
 import com.example.VO.MerchantOrderItemVO;
 import com.example.VO.MerchantOrderVO;
 import com.example.VO.OrderVO;
+import com.example.VO.RecentOrderVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -600,5 +603,92 @@ public class OrderServiceImpl implements OrderService {
         trace.setLocation(location);
         trace.setTraceTime(time);
         return trace;
+    }
+
+    @Override
+    public DashboardStatsVO getMerchantDashboardStats(Long merchantId) {
+        DashboardStatsVO stats = new DashboardStatsVO();
+        
+        // 今日订单数
+        Integer todayOrders = orderMapper.countTodayOrders(merchantId);
+        stats.setTodayOrders(todayOrders != null ? todayOrders : 0);
+        
+        // 昨日订单数
+        Integer yesterdayOrders = orderMapper.countYesterdayOrders(merchantId);
+        
+        // 计算增长率
+        if (yesterdayOrders != null && yesterdayOrders > 0) {
+            double growth = ((todayOrders - yesterdayOrders) * 100.0) / yesterdayOrders;
+            stats.setTodayOrdersGrowth(Math.round(growth * 10) / 10.0);
+        } else {
+            stats.setTodayOrdersGrowth(0.0);
+        }
+        
+        // 今日销售额
+        Double todaySales = orderMapper.sumTodaySales(merchantId);
+        stats.setTodaySales(todaySales != null ? todaySales : 0.0);
+        
+        // 昨日销售额
+        Double yesterdaySales = orderMapper.sumYesterdaySales(merchantId);
+        
+        // 计算销售额增长率
+        if (yesterdaySales != null && yesterdaySales > 0) {
+            double growth = ((todaySales - yesterdaySales) * 100.0) / yesterdaySales;
+            stats.setTodaySalesGrowth(Math.round(growth * 10) / 10.0);
+        } else {
+            stats.setTodaySalesGrowth(0.0);
+        }
+        
+        // 待处理订单（待发货）
+        Integer pendingOrders = orderMapper.countPendingOrders(merchantId);
+        stats.setPendingOrders(pendingOrders != null ? pendingOrders : 0);
+        
+        // 商品总数
+        Integer totalProducts = productMapper.countMerchantProducts(merchantId, null, null, null, null, null);
+        stats.setTotalProducts(totalProducts != null ? totalProducts : 0);
+        
+        // 在售商品数
+        Integer onSaleProducts = productMapper.countMerchantProducts(merchantId, null, null, 1, null, null);
+        stats.setOnSaleProducts(onSaleProducts != null ? onSaleProducts : 0);
+        
+        return stats;
+    }
+    
+    @Override
+    public DashboardTodosVO getMerchantDashboardTodos(Long merchantId) {
+        DashboardTodosVO todos = new DashboardTodosVO();
+        
+        // 待发货订单
+        Integer pendingShip = orderMapper.countPendingOrders(merchantId);
+        todos.setPendingShipOrders(pendingShip != null ? pendingShip : 0);
+        
+        // 库存不足商品（库存 < 10）
+        Integer lowStock = productMapper.countLowStockProducts(merchantId);
+        todos.setLowStockProducts(lowStock != null ? lowStock : 0);
+        
+        // 待审核商品
+        Integer pendingAudit = productMapper.countMerchantProducts(merchantId, null, null, 2, null, null);
+        todos.setPendingAuditProducts(pendingAudit != null ? pendingAudit : 0);
+        
+        return todos;
+    }
+    
+    @Override
+    public List<RecentOrderVO> getRecentOrders(Long merchantId, Integer limit) {
+        List<Orders> orders = orderMapper.selectRecentOrders(merchantId, limit);
+        
+        List<RecentOrderVO> result = new ArrayList<>();
+        for (Orders order : orders) {
+            RecentOrderVO vo = new RecentOrderVO();
+            vo.setId(order.getId());
+            vo.setOrderNo(order.getOrderNo());
+            vo.setUserName(order.getUserName());
+            vo.setTotalAmount(order.getTotalAmount());
+            vo.setStatus(order.getOrderStatus());
+            vo.setCreateTime(order.getCreateTime());
+            result.add(vo);
+        }
+        
+        return result;
     }
 }

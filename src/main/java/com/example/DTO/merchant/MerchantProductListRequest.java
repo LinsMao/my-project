@@ -12,4 +12,6 @@ public class MerchantProductListRequest {
     private Integer size = 12;
     private String sortField;  // 排序字段：price, stock, soldCount
     private String sortOrder;  // 排序方向：asc, desc
+    private String startTime;  // 创建时间起始
+    private String endTime;    // 创建时间截止
 }

@@ -6,15 +6,20 @@ import com.example.DTO.merchant.MerchantOrderListRequest;
 import com.example.DTO.merchant.MerchantProductListRequest;
 import com.example.Service.OrderService;
 import com.example.Service.ProductService;
+import com.example.VO.DashboardStatsVO;
+import com.example.VO.DashboardTodosVO;
+import com.example.VO.HotProductVO;
 import com.example.VO.MerchantOrderVO;
+import com.example.VO.ProductDetailVO;
+import com.example.VO.RecentOrderVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
-import com.example.VO.ProductDetailVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -74,6 +79,8 @@ public class MerchantController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
             @RequestParam(required = false) String sortField,
             @RequestParam(required = false) String sortOrder,
             @RequestParam(defaultValue = "1") Integer page,
@@ -84,6 +91,8 @@ public class MerchantController {
             request.setName(name);
             request.setCategoryId(categoryId);
             request.setStatus(status);
+            request.setStartTime(startTime);
+            request.setEndTime(endTime);
             request.setSortField(sortField);
             request.setSortOrder(sortOrder);
             request.setPage(page);
@@ -230,6 +239,64 @@ public class MerchantController {
             return ApiResponse.badRequest(e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error("发货失败：" + e.getMessage());
+        }
+    }
+    
+    // ==================== Dashboard 相关接口 ====================
+    
+    /**
+     * 获取商家 Dashboard 统计数据
+     */
+    @GetMapping("/dashboard/stats")
+    public ApiResponse<DashboardStatsVO> getDashboardStats(@RequestParam Long merchantId) {
+        try {
+            DashboardStatsVO stats = orderService.getMerchantDashboardStats(merchantId);
+            return ApiResponse.success(stats);
+        } catch (Exception e) {
+            return ApiResponse.error("获取统计数据失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取待办事项
+     */
+    @GetMapping("/dashboard/todos")
+    public ApiResponse<DashboardTodosVO> getDashboardTodos(@RequestParam Long merchantId) {
+        try {
+            DashboardTodosVO todos = orderService.getMerchantDashboardTodos(merchantId);
+            return ApiResponse.success(todos);
+        } catch (Exception e) {
+            return ApiResponse.error("获取待办事项失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取热销商品TOP N
+     */
+    @GetMapping("/dashboard/hot-products")
+    public ApiResponse<List<HotProductVO>> getHotProducts(
+            @RequestParam Long merchantId,
+            @RequestParam(defaultValue = "5") Integer limit) {
+        try {
+            List<HotProductVO> products = productService.getHotProducts(merchantId, limit);
+            return ApiResponse.success(products);
+        } catch (Exception e) {
+            return ApiResponse.error("获取热销商品失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取最近订单
+     */
+    @GetMapping("/dashboard/recent-orders")
+    public ApiResponse<List<RecentOrderVO>> getRecentOrders(
+            @RequestParam Long merchantId,
+            @RequestParam(defaultValue = "5") Integer limit) {
+        try {
+            List<RecentOrderVO> orders = orderService.getRecentOrders(merchantId, limit);
+            return ApiResponse.success(orders);
+        } catch (Exception e) {
+            return ApiResponse.error("获取最近订单失败：" + e.getMessage());
         }
     }
 }

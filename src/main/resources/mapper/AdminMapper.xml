@@ -93,4 +93,21 @@
         SELECT COUNT(*) FROM product WHERE merchant_id = #{merchantId}
     </select>
 
+    <!-- Dashboard 统计查询 -->
+    <select id="countTotalMerchants" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM admin WHERE role = 1
+    </select>
+    
+    <select id="countTotalUsers" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM users
+    </select>
+    
+    <select id="selectRecentMerchants" resultType="com.example.Entity.Admin">
+        SELECT id, username, nickname, phone, created_at
+        FROM admin
+        WHERE role = 1
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>
