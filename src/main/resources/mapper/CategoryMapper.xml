@@ -6,38 +6,49 @@
 <mapper namespace="com.example.Mapper.CategoryMapper">
 
     <select id="selectAll" resultType="com.example.Entity.Category">
-        SELECT id, name, sort_order, status, product_count, create_time, update_time
+        SELECT id, name, icon, description, is_hot, is_show_home, sort_order, status, product_count, create_time, update_time
         FROM category
         ORDER BY sort_order ASC, id ASC
     </select>
 
     <select id="selectEnabled" resultType="com.example.Entity.Category">
-        SELECT id, name, sort_order, status, product_count, create_time, update_time
+        SELECT id, name, icon, description, is_hot, is_show_home, sort_order, status, product_count, create_time, update_time
         FROM category
         WHERE status = 1
         ORDER BY sort_order ASC, id ASC
     </select>
+    
+    <select id="selectHomeCategories" resultType="com.example.Entity.Category">
+        SELECT id, name, icon, description, is_hot, is_show_home, sort_order, status, product_count, create_time, update_time
+        FROM category
+        WHERE status = 1 AND is_show_home = 1
+        ORDER BY sort_order ASC, id ASC
+    </select>
 
     <select id="selectById" resultType="com.example.Entity.Category">
-        SELECT id, name, sort_order, status, product_count, create_time, update_time
+        SELECT id, name, icon, description, is_hot, is_show_home, sort_order, status, product_count, create_time, update_time
         FROM category
         WHERE id = #{id}
     </select>
 
     <select id="selectByName" resultType="com.example.Entity.Category">
-        SELECT id, name, sort_order, status, product_count, create_time, update_time
+        SELECT id, name, icon, description, is_hot, is_show_home, sort_order, status, product_count, create_time, update_time
         FROM category
         WHERE name = #{name}
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO category (name, sort_order, status)
-        VALUES (#{name}, #{sortOrder}, #{status})
+        INSERT INTO category (name, icon, description, is_hot, is_show_home, sort_order, status)
+        VALUES (#{name}, #{icon}, #{description}, #{isHot}, #{isShowHome}, #{sortOrder}, #{status})
     </insert>
 
     <update id="update">
         UPDATE category
         SET name = #{name},
+            icon = #{icon},
+            description = #{description},
+            is_hot = #{isHot},
+            is_show_home = #{isShowHome},
             sort_order = #{sortOrder},
             status = #{status},
             update_time = NOW()

@@ -59,6 +59,32 @@ public class CategoryServiceImpl implements CategoryService {
         
         return voList;
     }
+    
+    @Override
+    public List<com.example.VO.HomeCategoryVO> getHomeCategories() {
+        List<Category> categories = categoryMapper.selectHomeCategories();
+        List<com.example.VO.HomeCategoryVO> voList = new ArrayList<>();
+        
+        for (Category category : categories) {
+            // 更新商品数量
+            int productCount = categoryMapper.countProductsByCategoryId(category.getId());
+            if (productCount != category.getProductCount()) {
+                categoryMapper.updateProductCount(category.getId(), productCount);
+                category.setProductCount(productCount);
+            }
+            
+            com.example.VO.HomeCategoryVO vo = new com.example.VO.HomeCategoryVO();
+            vo.setId(category.getId());
+            vo.setName(category.getName());
+            vo.setIcon(category.getIcon());
+            vo.setDescription(category.getDescription());
+            vo.setIsHot(category.getIsHot());
+            vo.setProductCount(productCount);
+            voList.add(vo);
+        }
+        
+        return voList;
+    }
 
     @Override
     public CategoryVO getCategoryById(Long id) {
@@ -82,6 +108,10 @@ public class CategoryServiceImpl implements CategoryService {
         
         Category category = new Category();
         category.setName(request.getName());
+        category.setIcon(request.getIcon());
+        category.setDescription(request.getDescription());
+        category.setIsHot(request.getIsHot() != null ? request.getIsHot() : 0);
+        category.setIsShowHome(request.getIsShowHome() != null ? request.getIsShowHome() : 1);
         category.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
         category.setStatus(request.getStatus() != null ? request.getStatus() : 1);
         
@@ -108,6 +138,10 @@ public class CategoryServiceImpl implements CategoryService {
         }
         
         category.setName(request.getName());
+        category.setIcon(request.getIcon());
+        category.setDescription(request.getDescription());
+        category.setIsHot(request.getIsHot());
+        category.setIsShowHome(request.getIsShowHome());
         category.setSortOrder(request.getSortOrder());
         category.setStatus(request.getStatus());
         

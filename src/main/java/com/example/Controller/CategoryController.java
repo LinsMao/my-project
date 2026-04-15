@@ -5,9 +5,14 @@ import com.example.DTO.category.CategoryRequest;
 import com.example.Service.CategoryService;
 import com.example.VO.CategoryVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -16,6 +21,60 @@ public class CategoryController {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Value("D:/my-images/banner/")
+    private String categoryImageLocalPath;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
+
+    @Value("${app.image.banner-path}")
+    private String categoryImageWebPath;
+
+    /**
+     * 上传分类图标
+     */
+    @PostMapping("/upload-icon")
+    public ApiResponse<String> uploadCategoryIcon(@RequestParam("file") MultipartFile file) {
+        try {
+            // 验证文件
+            if (file.isEmpty()) {
+                return ApiResponse.error("文件不能为空");
+            }
+
+            // 1. 确保目录存在
+            File dir = new File(categoryImageLocalPath);
+            if (!dir.exists()) {
+                boolean created = dir.mkdirs();
+                if (!created) {
+                    return ApiResponse.error("创建目录失败：" + categoryImageLocalPath);
+                }
+            }
+
+            // 2. 生成唯一文件名
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isEmpty()) {
+                return ApiResponse.error("文件名不能为空");
+            }
+            
+            String ext = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String fileName = "category_" + UUID.randomUUID().toString() + ext;
+            String filePath = categoryImageLocalPath + fileName;
+
+            // 3. 保存文件
+            file.transferTo(new File(filePath));
+
+            // 4. 返回完整URL
+            String url = baseUrl + categoryImageWebPath + fileName;
+            return ApiResponse.success(url);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ApiResponse.error("图片上传失败：" + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.error("上传异常：" + e.getMessage());
+        }
+    }
 
     /**
      * 获取所有启用的分类（小程序端）
@@ -27,6 +86,19 @@ public class CategoryController {
             return ApiResponse.success(categories);
         } catch (Exception e) {
             return ApiResponse.error("获取分类列表失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取首页显示的分类（小程序端）
+     */
+    @GetMapping("/public/home")
+    public ApiResponse<List<com.example.VO.HomeCategoryVO>> getHomeCategories() {
+        try {
+            List<com.example.VO.HomeCategoryVO> categories = categoryService.getHomeCategories();
+            return ApiResponse.success(categories);
+        } catch (Exception e) {
+            return ApiResponse.error("获取首页分类失败：" + e.getMessage());
         }
     }
 

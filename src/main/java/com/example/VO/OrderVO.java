@@ -23,6 +23,7 @@ public class OrderVO {
     private String remark;              // 备注
     private String deliveryCompany;     // 物流公司
     private String deliveryNo;          // 物流单号
+    private Integer isReviewed;         // 是否已评价
     private LocalDateTime createTime;   // 创建时间
     private LocalDateTime payTime;      // 支付时间
     private LocalDateTime deliveryTime; // 发货时间

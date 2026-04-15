@@ -1,15 +1,16 @@
-package com.example.DTO.category;
+package com.example.VO;
 
 import lombok.Data;
 
+/**
+ * 首页分类展示VO
+ */
 @Data
-public class CategoryRequest {
+public class HomeCategoryVO {
     private Long id;
     private String name;
     private String icon;
     private String description;
     private Integer isHot;
-    private Integer isShowHome;
-    private Integer sortOrder;
-    private Integer status;
+    private Integer productCount;
 }

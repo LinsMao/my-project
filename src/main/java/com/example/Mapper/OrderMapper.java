@@ -70,4 +70,13 @@ public interface OrderMapper {
     
     // 根据订单号查询订单（管理员用，不限制商家）
     Orders selectByOrderNoForAdmin(@Param("orderNo") String orderNo);
+    
+    // 根据订单号查询订单
+    Orders selectByOrderNo(@Param("orderNo") String orderNo);
+    
+    // 根据订单ID查询订单
+    Orders selectById(@Param("id") Long id);
+    
+    // 更新订单评论状态
+    void updateReviewStatus(@Param("id") Long id, @Param("isReviewed") Integer isReviewed);
 }

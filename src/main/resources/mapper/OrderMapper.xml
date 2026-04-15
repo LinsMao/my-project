@@ -211,5 +211,22 @@
         WHERE o.order_no = #{orderNo}
     </select>
 
+    <!-- 根据订单号查询订单 -->
+    <select id="selectByOrderNo" resultType="com.example.Entity.Orders">
+        SELECT * FROM orders WHERE order_no = #{orderNo}
+    </select>
+
+    <!-- 根据订单ID查询订单 -->
+    <select id="selectById" resultType="com.example.Entity.Orders">
+        SELECT * FROM orders WHERE id = #{id}
+    </select>
+
+    <!-- 更新订单评论状态 -->
+    <update id="updateReviewStatus">
+        UPDATE orders 
+        SET is_reviewed = #{isReviewed}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
 </mapper>
 

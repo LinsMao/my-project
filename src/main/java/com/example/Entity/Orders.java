@@ -29,6 +29,7 @@ public class Orders {
     private LocalDateTime deliveryTime;  // 发货时间
     private LocalDateTime receiveTime;   // 收货时间
     private LocalDateTime cancelTime;    // 取消时间
+    private Integer isReviewed;          // 是否已评论：0-未评论，1-已评论
     private LocalDateTime createTime;    // 创建时间
     private LocalDateTime updateTime;    // 更新时间
 }

@@ -18,6 +18,11 @@ public interface CategoryService {
     List<CategoryVO> getEnabledCategories();
     
     /**
+     * 获取首页显示的分类
+     */
+    List<com.example.VO.HomeCategoryVO> getHomeCategories();
+    
+    /**
      * 根据ID获取分类
      */
     CategoryVO getCategoryById(Long id);

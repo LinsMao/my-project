@@ -15,6 +15,9 @@ public interface CategoryMapper {
     // 查询所有启用的分类（小程序端）
     List<Category> selectEnabled();
     
+    // 查询首页显示的分类（按排序）
+    List<Category> selectHomeCategories();
+    
     // 根据ID查询分类
     Category selectById(@Param("id") Long id);
     

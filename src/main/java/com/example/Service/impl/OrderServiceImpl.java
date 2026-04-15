@@ -242,6 +242,7 @@ public class OrderServiceImpl implements OrderService {
             vo.setMerchantName(order.getMerchantName());
             vo.setOrderStatus(order.getOrderStatus());
             vo.setPayAmount(order.getPayAmount());
+            vo.setIsReviewed(order.getIsReviewed());  // 添加评论状态
             vo.setCreateTime(order.getCreateTime());
             
             // 查询订单项
@@ -283,6 +284,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setRemark(order.getRemark());
         vo.setDeliveryCompany(order.getDeliveryCompany());
         vo.setDeliveryNo(order.getDeliveryNo());
+        vo.setIsReviewed(order.getIsReviewed());  // 添加评论状态
         vo.setCreateTime(order.getCreateTime());
         vo.setPayTime(order.getPayTime());
         vo.setDeliveryTime(order.getDeliveryTime());

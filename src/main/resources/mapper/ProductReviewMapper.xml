@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.Mapper.ProductReviewMapper">
+
+    <resultMap id="ProductReviewResultMap" type="com.example.Entity.ProductReview">
+        <id property="id" column="id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="userName" column="user_name"/>
+        <result property="rating" column="rating"/>
+        <result property="content" column="content"/>
+        <result property="isAnonymous" column="is_anonymous"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- 插入评论 -->
+    <insert id="insert" parameterType="com.example.Entity.ProductReview" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO product_review (
+            order_id, product_id, user_id, user_name, rating, content, is_anonymous, status, create_time, update_time
+        ) VALUES (
+            #{orderId}, #{productId}, #{userId}, #{userName}, #{rating}, #{content}, #{isAnonymous}, #{status}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 根据ID查询评论 -->
+    <select id="selectById" resultMap="ProductReviewResultMap">
+        SELECT * FROM product_review WHERE id = #{id}
+    </select>
+
+    <!-- 根据订单和商品查询评论 -->
+    <select id="selectByOrderAndProduct" resultMap="ProductReviewResultMap">
+        SELECT * FROM product_review 
+        WHERE order_id = #{orderId} AND product_id = #{productId}
+        LIMIT 1
+    </select>
+
+    <!-- 根据商品ID查询评论列表（用户端） -->
+    <select id="selectByProductId" resultMap="ProductReviewResultMap">
+        SELECT * FROM product_review
+        WHERE product_id = #{productId}
+        AND status = 1
+        <if test="rating != null">
+            AND rating = #{rating}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计商品评论数量（用户端） -->
+    <select id="countByProductId" resultType="int">
+        SELECT COUNT(*) FROM product_review
+        WHERE product_id = #{productId}
+        AND status = 1
+        <if test="rating != null">
+            AND rating = #{rating}
+        </if>
+    </select>
+
+    <!-- 查询所有评论（管理端） -->
+    <select id="selectAll" resultMap="ProductReviewResultMap">
+        SELECT * FROM product_review
+        WHERE 1=1
+        <if test="productId != null">
+            AND product_id = #{productId}
+        </if>
+        <if test="rating != null">
+            AND rating = #{rating}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计所有评论数量（管理端） -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM product_review
+        WHERE 1=1
+        <if test="productId != null">
+            AND product_id = #{productId}
+        </if>
+        <if test="rating != null">
+            AND rating = #{rating}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 更新评论状态 -->
+    <update id="updateStatus">
+        UPDATE product_review 
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除评论 -->
+    <delete id="deleteById">
+        DELETE FROM product_review WHERE id = #{id}
+    </delete>
+
+    <!-- 获取商品平均评分 -->
+    <select id="getAverageRating" resultType="java.lang.Double">
+        SELECT AVG(rating) FROM product_review
+        WHERE product_id = #{productId}
+        AND status = 1
+    </select>
+
+    <!-- 统计指定评分数量 -->
+    <select id="countByRating" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM product_review
+        WHERE product_id = #{productId}
+        AND rating = #{rating}
+        AND status = 1
+    </select>
+
+</mapper>
