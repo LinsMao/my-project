@@ -2,6 +2,7 @@ package com.example.Controller;
 
 import com.example.Common.ApiResponse;
 import com.example.Service.ProductService;
+import com.example.Service.RecommendationService;
 import com.example.Utils.JwtUtils;
 import com.example.VO.ProductDetailVO;
 import com.example.VO.ProductVO;
@@ -18,15 +19,23 @@ public class ProductController {
 
     @Autowired
     private ProductService productService;
+    
+    @Autowired
+    private RecommendationService recommendationService;
 
     /**
-     * 首页商品展示
+     * 首页商品展示（使用推荐算法）
      */
     @GetMapping("/list")
-    public ApiResponse<List<ProductVO>> getProductList( @RequestParam(defaultValue = "1") int page,
-                                                        @RequestParam(defaultValue = "10") int size) {
+    public ApiResponse<List<ProductVO>> getProductList(@RequestParam(defaultValue = "1") int page,
+                                                        @RequestParam(defaultValue = "10") int size,
+                                                        HttpServletRequest request) {
         try {
-            List<ProductVO> list = productService.getHomeProductPage(page, size);
+            // 获取用户ID（可能未登录）
+            Long userId = getCurrentUserId(request);
+            
+            // 使用推荐服务获取商品列表
+            List<ProductVO> list = productService.getRecommendedProductPage(userId, page, size);
             return ApiResponse.success(list);
         } catch (Exception e) {
             return ApiResponse.error(e+"获取商品列表失败！！！");
@@ -43,6 +52,11 @@ public class ProductController {
         try {
             // 获取用户ID（如果已登录）
             Long userId = getCurrentUserId(request);
+            
+            // 记录浏览行为
+            if (userId != null) {
+                recommendationService.recordView(userId, id);
+            }
             
             ProductDetailVO detail = productService.getProductDetail(id, userId);
             return ApiResponse.success(detail);

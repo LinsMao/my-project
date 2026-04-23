@@ -34,6 +34,7 @@
             main_image,
             sold_count,
             unit,
+            status,
             is_recommended,
             is_hot,
             is_new

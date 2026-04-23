@@ -16,6 +16,11 @@ public interface ProductService {
      * 获取首页商品列表
      */
     List<ProductVO> getHomeProductPage(int page, int size);
+    
+    /**
+     * 获取推荐商品列表（支持分页）
+     */
+    List<ProductVO> getRecommendedProductPage(Long userId, int page, int size);
 
     /**
      * 根据分类ID获取商品列表

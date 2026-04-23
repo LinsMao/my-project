@@ -8,6 +8,7 @@ import com.example.Mapper.ProductAuditMapper;
 import com.example.Mapper.ProductMapper;
 import com.example.Mapper.admin.AdminMapper;
 import com.example.Service.ProductService;
+import com.example.Service.RecommendationService;
 import com.example.VO.HotProductVO;
 import com.example.VO.MerchantProductVO;
 import com.example.VO.ProductAuditVO;
@@ -39,6 +40,9 @@ public class ProductServiceImpl implements ProductService {
     
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+    
+    @Autowired
+    private RecommendationService recommendationService;
 
 
 
@@ -70,6 +74,67 @@ public class ProductServiceImpl implements ProductService {
             vo.setImage(p.getMainImage());
 
             // 首页标签
+            List<String> tags = new ArrayList<>();
+            if (p.getIsRecommended() != null && p.getIsRecommended() == 1) {
+                tags.add("推荐");
+            }
+            if (p.getIsHot() != null && p.getIsHot() == 1) {
+                tags.add("热销");
+            }
+            if (p.getIsNew() != null && p.getIsNew() == 1) {
+                tags.add("新品");
+            }
+            vo.setTagList(tags);
+
+            result.add(vo);
+        }
+
+        return result;
+    }
+    
+    @Override
+    public List<ProductVO> getRecommendedProductPage(Long userId, int page, int size) {
+        if (page < 1) page = 1;
+        if (size <= 0) size = 10;
+
+        // 使用推荐服务获取推荐商品ID列表
+        List<Product> recommendedProducts;
+        
+        if (userId == null) {
+            // 未登录用户：返回热销商品（分页）
+            int offset = (page - 1) * size;
+            recommendedProducts = productMapper.selectHomeProductPage(offset, size);
+        } else {
+            // 已登录用户：使用推荐算法
+            // 一次性获取足够多的推荐商品(50个),然后分页返回
+            // 这样每次刷新都能看到推荐结果的变化
+            List<Product> allRecommended = recommendationService.getRecommendedProducts(userId, 50);
+            
+            // 计算当前页的起始和结束位置
+            int startIndex = (page - 1) * size;
+            int endIndex = Math.min(startIndex + size, allRecommended.size());
+            
+            if (startIndex >= allRecommended.size()) {
+                recommendedProducts = new ArrayList<>();
+            } else {
+                recommendedProducts = allRecommended.subList(startIndex, endIndex);
+            }
+        }
+
+        // 转换为VO
+        List<ProductVO> result = new ArrayList<>();
+        for (Product p : recommendedProducts) {
+            ProductVO vo = new ProductVO();
+            vo.setId(p.getId());
+            vo.setName(p.getName());
+            vo.setSubtitle(p.getSubtitle());
+            vo.setPrice(p.getPrice());
+            vo.setOriginalPrice(p.getOriginalPrice());
+            vo.setSoldCount(p.getSoldCount());
+            vo.setUnit(p.getUnit());
+            vo.setImage(p.getMainImage());
+
+            // 标签
             List<String> tags = new ArrayList<>();
             if (p.getIsRecommended() != null && p.getIsRecommended() == 1) {
                 tags.add("推荐");
