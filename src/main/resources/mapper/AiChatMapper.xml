@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.Mapper.AiChatMapper">
+
+    <!-- 插入消息 -->
+    <insert id="insertMessage" parameterType="com.example.Entity.AiChatMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ai_chat_message (user_id, role, content, session_id, created_at)
+        VALUES (#{userId}, #{role}, #{content}, #{sessionId}, #{createdAt})
+    </insert>
+
+    <!-- 根据用户ID和会话ID获取历史消息 -->
+    <select id="getMessagesByUserAndSession" resultType="com.example.Entity.AiChatMessage">
+        SELECT id, user_id, role, content, session_id, created_at
+        FROM ai_chat_message
+        WHERE user_id = #{userId}
+        <if test="sessionId != null and sessionId != ''">
+            AND session_id = #{sessionId}
+        </if>
+        ORDER BY created_at DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据用户ID获取最近的消息 -->
+    <select id="getRecentMessagesByUser" resultType="com.example.Entity.AiChatMessage">
+        SELECT id, user_id, role, content, session_id, created_at
+        FROM ai_chat_message
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
