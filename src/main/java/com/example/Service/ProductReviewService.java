@@ -54,4 +54,9 @@ public interface ProductReviewService {
      * 商家更新评论状态
      */
     void updateReviewStatusByMerchant(Long merchantId, Long reviewId, Integer status);
+    
+    /**
+     * 商家回复评论
+     */
+    void replyReview(Long merchantId, Long reviewId, String replyContent);
 }

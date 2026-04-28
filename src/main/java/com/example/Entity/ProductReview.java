@@ -15,6 +15,8 @@ public class ProductReview {
     private String content;
     private Integer isAnonymous;
     private Integer status;
+    private String merchantReply;
+    private LocalDateTime replyTime;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

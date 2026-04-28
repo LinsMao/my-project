@@ -278,4 +278,31 @@ public class ProductReviewServiceImpl implements ProductReviewService {
 
         productReviewMapper.updateStatus(reviewId, status);
     }
+
+    @Override
+    @Transactional
+    public void replyReview(Long merchantId, Long reviewId, String replyContent) {
+        // 1. 查询评论
+        ProductReview review = productReviewMapper.selectById(reviewId);
+        if (review == null) {
+            throw new RuntimeException("评论不存在");
+        }
+
+        // 2. 验证商品是否属于该商家
+        com.example.Entity.Product product = productMapper.selectById(review.getProductId());
+        if (product == null || !product.getMerchantId().equals(merchantId)) {
+            throw new RuntimeException("无权回复该评论");
+        }
+
+        // 3. 验证回复内容
+        if (replyContent == null || replyContent.trim().isEmpty()) {
+            throw new RuntimeException("回复内容不能为空");
+        }
+        if (replyContent.length() > 500) {
+            throw new RuntimeException("回复内容不能超过500个字符");
+        }
+
+        // 4. 更新商家回复
+        productReviewMapper.updateMerchantReply(reviewId, replyContent.trim());
+    }
 }

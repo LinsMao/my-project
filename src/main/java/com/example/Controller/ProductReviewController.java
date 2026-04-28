@@ -168,6 +168,24 @@ public class ProductReviewController {
         }
     }
 
+    /**
+     * 商家回复评论
+     */
+    @PutMapping("/merchant/{id}/reply")
+    public ApiResponse<?> replyReview(@PathVariable Long id, @RequestParam String replyContent, HttpServletRequest httpRequest) {
+        Long merchantId = getCurrentMerchantId(httpRequest);
+        if (merchantId == null) {
+            return ApiResponse.unauthorized("未登录");
+        }
+
+        try {
+            productReviewService.replyReview(merchantId, id, replyContent);
+            return ApiResponse.success("回复成功");
+        } catch (Exception e) {
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
     // 获取当前商家ID
     private Long getCurrentMerchantId(HttpServletRequest request) {
         String token = request.getHeader("Authorization");

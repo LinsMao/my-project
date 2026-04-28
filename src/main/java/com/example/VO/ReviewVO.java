@@ -12,5 +12,7 @@ public class ReviewVO {
     private Integer rating;
     private String content;
     private Integer isAnonymous;
+    private String merchantReply;
+    private LocalDateTime replyTime;
     private LocalDateTime createTime;
 }

@@ -43,4 +43,6 @@ public interface ProductReviewMapper {
     Double getAverageRating(Long productId);
     
     Long countByRating(@Param("productId") Long productId, @Param("rating") Integer rating);
+    
+    void updateMerchantReply(@Param("id") Long id, @Param("merchantReply") String merchantReply);
 }

@@ -13,6 +13,8 @@
         <result property="content" column="content"/>
         <result property="isAnonymous" column="is_anonymous"/>
         <result property="status" column="status"/>
+        <result property="merchantReply" column="merchant_reply"/>
+        <result property="replyTime" column="reply_time"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
@@ -130,5 +132,14 @@
         AND rating = #{rating}
         AND status = 1
     </select>
+
+    <!-- 更新商家回复 -->
+    <update id="updateMerchantReply">
+        UPDATE product_review 
+        SET merchant_reply = #{merchantReply}, 
+            reply_time = NOW(),
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
 
 </mapper>
