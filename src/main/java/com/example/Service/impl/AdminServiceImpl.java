@@ -224,8 +224,13 @@ public class AdminServiceImpl implements AdminService {
             throw new IllegalArgumentException("只能操作商家账号");
         }
 
-        // 更新状态
+        // 更新商家状态
         adminMapper.updateStatus(id, status);
+        
+        // 如果是禁用商家（status = 0），则自动下架该商家的所有商品
+        if (status == 0) {
+            productMapper.updateProductStatusByMerchantId(id, 0);
+        }
     }
 
     @Override

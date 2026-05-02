@@ -392,3 +392,11 @@
     </select>
 
 </mapper>
+
+    <!-- 批量更新商家的所有商品状态 -->
+    <update id="updateProductStatusByMerchantId">
+        UPDATE product
+        SET status = #{status},
+            update_time = NOW()
+        WHERE merchant_id = #{merchantId}
+    </update>

@@ -112,4 +112,7 @@ public interface ProductMapper {
     
     // 商品统计
     Integer countProductsByStatus(@Param("status") Integer status);
+    
+    // 批量更新商家的所有商品状态
+    int updateProductStatusByMerchantId(@Param("merchantId") Long merchantId, @Param("status") Integer status);
 }
